@@ -1,0 +1,114 @@
+<div class="screen">
+  <div class="main">
+    <div class="kicker">Registration</div>
+    <div class="page-title">New report</div>
+
+    <div class="card reg-card">
+      <div class="reg-grid">
+        @for (f of regFields; track f.key) {
+          <label class="field-label">
+            {{ f.label }}
+            <input
+              class="field-input"
+              [class.mono]="f.mono"
+              [value]="store.state().reg[f.key]"
+              (input)="setReg(f.key, $event)"
+              [placeholder]="f.ph"
+            />
+          </label>
+        }
+        <label class="field-label">
+          Sex
+          <select class="field-select" [value]="store.state().reg.sex" (change)="setRegSex($event)">
+            <option value="F">Female</option>
+            <option value="M">Male</option>
+          </select>
+        </label>
+      </div>
+      <div class="reg-footer mono">
+        <div>Patient ID {{ store.nextPid }} assigned on save</div>
+        <div class="spacer"></div>
+        <div class="clear-link" (click)="store.clearReg()">Clear form</div>
+      </div>
+    </div>
+
+    <div class="tests-header">
+      <div class="tests-title">Tests for this visit</div>
+      <input
+        class="tests-filter"
+        [value]="store.state().q"
+        (input)="setQ($event)"
+        placeholder="Filter tests"
+      />
+    </div>
+
+    <div class="cards-grid">
+      @for (c of store.cards(); track c.id) {
+        <div class="card test-card" [class.on]="c.on">
+          <div class="card-head" (click)="store.toggleCard(c.id)">
+            <div class="tick-box" [class.on]="c.on">{{ c.on ? "✓" : "" }}</div>
+            <div class="card-info">
+              <div class="card-name">{{ c.name }}</div>
+              <div class="card-preview">{{ c.preview }}</div>
+            </div>
+            <div class="mono card-count">{{ c.count }}</div>
+          </div>
+          @if (c.on) {
+            <div class="analytes">
+              <div class="analytes-head">
+                <div class="analytes-title">Analytes to print</div>
+                <div class="analytes-all" (click)="store.includeAll(c.id)">All</div>
+              </div>
+              <div class="analytes-chips">
+                @for (a of c.rows; track a.name) {
+                  <div
+                    class="chip"
+                    [class.active]="a.on"
+                    (click)="store.toggleAnalyte(c.id, a.name)"
+                  >
+                    {{ a.name }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="kicker">Order summary</div>
+    <div class="summary-name">{{ store.state().reg.name || store.state().patient.name || "No patient yet" }}</div>
+    <div class="summary-lines">
+      <div class="summary-line">
+        <div class="k">Patient</div>
+        <div class="v mono">{{ store.state().reg.name ? "new" : store.state().patient.id || "—" }}</div>
+      </div>
+      <div class="summary-line">
+        <div class="k">Tests</div>
+        <div class="v mono">{{ store.state().selected.length }}</div>
+      </div>
+      <div class="summary-line">
+        <div class="k">Printed rows</div>
+        <div class="v mono">{{ store.totalPrintRows() }}</div>
+      </div>
+      <div class="summary-line">
+        <div class="k">Page fit</div>
+        <div class="v mono" [class.warn]="store.totalPrintRows() > 26">
+          {{ store.totalPrintRows() > 26 ? "2 pages" : "1 page" }}
+        </div>
+      </div>
+    </div>
+    <div class="selected-names">
+      @for (id of store.state().selected; track id) {
+        @if (store.panel(id); as p) {
+          <div class="selected-name">{{ p.name }}</div>
+        }
+      }
+    </div>
+    <div class="spacer"></div>
+    <div class="btn btn-primary save-order-btn" (click)="saveOrder()">Save order</div>
+    <div class="save-hint">Saved orders wait in Result entry until the sample is processed.</div>
+  </div>
+</div>

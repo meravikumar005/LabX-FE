@@ -1,0 +1,56 @@
+<div class="screen">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="kicker">Records</div>
+        <div class="page-title">All reports</div>
+      </div>
+      <div class="spacer"></div>
+      <input
+        class="search-input"
+        [value]="store.state().rq"
+        (input)="setRq($event)"
+        placeholder="Search patient ID, mobile, name, report or bill no."
+      />
+    </div>
+    <div class="chips-row">
+      @for (c of store.statusChips(); track c.label) {
+        <div class="chip" [class.active]="c.active" (click)="pickStatus(c.label)">
+          <div>{{ c.label }}</div>
+          <div class="mono n">{{ c.n }}</div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="card table-card">
+      <div class="table-head reports-grid">
+        <div>Report</div>
+        <div>Date</div>
+        <div>Patient</div>
+        <div>Age/Sex</div>
+        <div>Tests</div>
+        <div>Status</div>
+        <div></div>
+      </div>
+      @for (r of store.reportRows(); track r.id) {
+        <div class="table-row reports-grid">
+          <div class="mono muted-col">{{ r.id }}</div>
+          <div class="mono muted-col">{{ r.date }}</div>
+          <div>
+            <div class="patient-name">{{ r.name }}</div>
+            <div class="mono patient-sub">{{ r.pid }} · {{ r.mobile }}</div>
+          </div>
+          <div class="mono">{{ r.ageSex }}</div>
+          <div class="tests-col">{{ r.tests }}</div>
+          <div><span class="badge" [class]="store.statusClass(r.status)">{{ r.status }}</span></div>
+          <div class="action-col" (click)="open(r)">{{ r.actionLabel }} →</div>
+        </div>
+      }
+      @if (store.reportRows().length === 0) {
+        <div class="empty">No report matches those filters.</div>
+      }
+    </div>
+  </div>
+</div>

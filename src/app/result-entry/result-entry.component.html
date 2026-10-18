@@ -1,0 +1,78 @@
+<div class="screen">
+  <div class="panels-side">
+    <div class="kicker">Panels</div>
+    <div class="panels-list">
+      @for (t of store.panelTabs(); track t.id) {
+        <div class="panel-tab" [class.active]="t.active" (click)="store.setEntryTab(t.id)">
+          <div class="panel-tab-row">
+            <div class="panel-tab-label">{{ t.label }}</div>
+            <div class="mono panel-tab-done">{{ t.done }}</div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width]="t.pct"></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="entry-header">
+      <div>
+        <div class="back-link" (click)="backToQueue()">← Result entry</div>
+        <div class="patient-name">{{ store.state().patient.name }}</div>
+        <div class="mono patient-meta">
+          {{ store.state().patient.id }} · {{ store.state().patient.age }}Y/{{ store.state().patient.sex }} ·
+          {{ store.state().activeReport }} · Bill {{ store.state().patient.bill }}
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="btn btn-ghost" (click)="goPrint()">Print preview</div>
+      <div class="btn btn-primary" (click)="saveResults()">Save results</div>
+    </div>
+
+    <div class="body">
+      <div class="card table-card">
+        <div class="table-head entry-grid">
+          <div>Investigation</div>
+          <div>Result</div>
+          <div>Unit</div>
+          <div>Reference</div>
+          <div></div>
+        </div>
+        @for (r of store.entryRows(); track r.name) {
+          <div class="table-row entry-grid no-hover" [class.head-row]="r.head">
+            <div
+              class="row-name"
+              [class.bold]="r.bold"
+              [style.padding-left]="r.indent"
+              [class.muted]="r.head"
+            >
+              {{ r.name }}
+            </div>
+            @if (r.isInput) {
+              <input
+                class="mono value-input"
+                [class.flagged]="r.flag"
+                [value]="r.value"
+                (input)="setValue(r.name, $event)"
+                placeholder="—"
+              />
+            } @else {
+              <div></div>
+            }
+            <div class="mono unit-col">{{ r.unit }}</div>
+            <div class="mono ref-col">{{ r.ref }}</div>
+            <div class="flag-col" [class.flag-high]="r.flag === 'H'" [class.flag-low]="r.flag === 'L'">
+              {{ r.flag === "H" ? "↑" : r.flag === "L" ? "↓" : "" }}
+            </div>
+          </div>
+        }
+      </div>
+      <div class="footnote">
+        Ranges shown are the {{ store.sexWord() }} column from the template. Blank rows are dropped from the printed
+        page.
+      </div>
+    </div>
+  </div>
+</div>

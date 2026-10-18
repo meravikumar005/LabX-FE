@@ -1,0 +1,72 @@
+<div class="page">
+  <div class="header-row">
+    <div>
+      <div class="kicker">Worklist</div>
+      <div class="page-title">Dashboard</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="search-box" style="width: 320px">
+      <div class="search-icon">⌕</div>
+      <input
+        [value]="store.state().dq"
+        (input)="setDq($any($event.target).value)"
+        placeholder="Search name, patient ID, mobile or report ID"
+      />
+      <div class="mono count">{{ store.dashCount() }}</div>
+    </div>
+  </div>
+
+  <div class="stats card">
+    @for (s of store.stats(); track s.label) {
+      <div class="stat">
+        <div class="stat-label">{{ s.label }}</div>
+        <div class="stat-value-row">
+          <div class="stat-value">{{ s.value }}</div>
+          <div class="stat-note">{{ s.note }}</div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="card table-card">
+    <div class="table-toolbar">
+      <div class="table-title">Today's reports</div>
+      @for (f of filters; track f) {
+        <div
+          class="filter-chip"
+          [class.active]="store.state().dashFilter === f"
+          (click)="store.setDashFilter(f)"
+        >
+          {{ f }}
+        </div>
+      }
+    </div>
+
+    <div class="table-head dash-grid">
+      <div>Report</div>
+      <div>Patient</div>
+      <div>Age/Sex</div>
+      <div>Tests</div>
+      <div>Status</div>
+      <div></div>
+    </div>
+
+    @for (r of store.dashRows(); track r.id) {
+      <div class="table-row dash-grid" [class]="store.railClass(r.status)">
+        <div class="mono id-col">{{ r.id }}</div>
+        <div>
+          <div class="patient-name">{{ r.name }}</div>
+          <div class="mono patient-sub">{{ r.pid }} · {{ r.mobile }}</div>
+        </div>
+        <div class="mono">{{ r.ageSex }}</div>
+        <div class="tests-col">{{ r.tests }}</div>
+        <div><span class="badge" [class]="store.statusClass(r.status)">{{ r.status }}</span></div>
+        <div class="action-col" (click)="open(r)">{{ r.actionLabel }} →</div>
+      </div>
+    }
+
+    @if (store.dashRows().length === 0) {
+      <div class="empty">Nothing matches "{{ store.state().dq }}". Older visits live in All reports.</div>
+    }
+  </div>
+</div>

@@ -1,0 +1,65 @@
+<div class="screen">
+  <div class="print-toolbar">
+    <div class="mono meta">{{ store.state().activeReport }} · {{ store.state().patient.name }} · 1 page A4</div>
+    <div class="spacer"></div>
+    @for (t of toggles; track t.key) {
+      <div class="chip" [class.active]="store.state()[t.key]" (click)="flip(t.key)">
+        <div class="tick">{{ store.state()[t.key] ? "✓" : "○" }}</div>
+        <div>{{ t.label }}</div>
+      </div>
+    }
+    <div class="btn btn-primary" (click)="verifyAndPrint()">Verify &amp; print</div>
+  </div>
+
+  <div class="print-canvas">
+    <div class="sheet">
+      @if (store.state().printHeader) {
+        <div class="letterhead">
+          <div class="logo">SH</div>
+          <div class="hospital-info">
+            <div class="hospital-name">Sarbottam Hospital Pvt. Ltd.</div>
+            <div class="hospital-line">Birgunj-8, Parsa, Nepal · 051-527755</div>
+            <div class="hospital-line">Department of Pathology</div>
+          </div>
+          <div class="logo-spacer"></div>
+        </div>
+      }
+
+      <div class="meta-grid">
+        <div><b>Name:</b> {{ store.state().patient.name }}</div>
+        <div><b>Bill No.:</b> {{ store.state().patient.bill }}</div>
+        <div><b>Age / Sex:</b> {{ store.state().patient.age }} Yrs / {{ store.sexWord() }}</div>
+        <div><b>Date:</b> {{ store.today.ad }} · B.S. {{ store.today.bs }}</div>
+        <div><b>Referred by:</b> {{ store.state().patient.ref }}</div>
+        <div><b>Report No.:</b> {{ store.state().activeReport }}</div>
+      </div>
+
+      @for (pl of store.printPanels(); track pl.id) {
+        <div>
+          <div class="panel-heading">{{ pl.heading }}</div>
+          <div class="panel-table">
+            <div class="ph">Investigation</div>
+            <div class="ph">Result</div>
+            <div class="ph">Unit</div>
+            <div class="ph">Ref. Range</div>
+            @for (r of pl.rows; track r.name) {
+              <div class="pr-name" [style.padding-left]="r.indent" [class.bold]="r.bold">{{ r.name }}</div>
+              <div class="pr-value mono" [class.bold]="r.bold">
+                {{ r.value }} <span class="arrow" [class.flag-high]="r.high" [class.flag-low]="r.arrow && !r.high">{{ r.arrow }}</span>
+              </div>
+              <div class="pr-unit">{{ r.unit }}</div>
+              <div class="pr-ref mono">{{ r.ref }}</div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="sign-row">
+        <div class="printed-at">Printed {{ store.today.ad }} 10:12 · {{ store.state().activeReport }}</div>
+        <div class="signature">
+          <div class="signature-line">Lab Technologist</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

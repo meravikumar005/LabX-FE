@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "labx-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=/Users/ravikumar/.nvm/versions/node/v24.18.0/bin:$PATH && npx ng serve --port 1420"
+      ],
+      "port": 1420
+    }
+  ]
+}

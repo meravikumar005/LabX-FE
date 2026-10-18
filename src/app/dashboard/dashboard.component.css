@@ -1,0 +1,134 @@
+:host {
+  display: contents;
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 26px 34px;
+}
+
+.header-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.spacer {
+  flex: 1;
+}
+.search-icon {
+  font-size: 13px;
+  color: var(--muted-3);
+}
+.count {
+  font-size: 10.5px;
+  color: var(--muted-3);
+}
+
+.stats {
+  display: flex;
+  margin-top: 18px;
+  overflow: hidden;
+}
+.stat {
+  flex: 1;
+  padding: 15px 18px;
+  border-left: 1px solid var(--border-light);
+}
+.stat:first-child {
+  border-left: none;
+}
+.stat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  font-weight: 600;
+}
+.stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 6px;
+}
+.stat-value {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+}
+.stat-note {
+  font-size: 11.5px;
+  color: var(--muted-3);
+}
+
+.table-card {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-light);
+}
+.table-title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+.filter-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--row-bg);
+  color: var(--muted-4);
+}
+.filter-chip.active {
+  background: var(--accent-light-tint);
+  color: var(--accent);
+}
+
+.dash-grid {
+  grid-template-columns: 100px minmax(130px, 1.3fr) 62px minmax(150px, 1.5fr) 112px 92px;
+  min-width: 748px;
+}
+
+.id-col {
+  font-size: 11.5px;
+  color: var(--muted-4);
+}
+.patient-name {
+  font-weight: 500;
+}
+.patient-sub {
+  font-size: 10.5px;
+  color: var(--muted-2);
+  margin-top: 2px;
+}
+.tests-col {
+  font-size: 12px;
+  color: var(--muted-5);
+  line-height: 1.4;
+}
+.table-row {
+  border-left: 3px solid transparent;
+}
+.action-col {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: right;
+}
+
+.empty {
+  padding: 26px 18px;
+  font-size: 12.5px;
+  color: var(--muted);
+}

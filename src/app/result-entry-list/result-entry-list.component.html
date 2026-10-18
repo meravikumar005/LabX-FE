@@ -1,0 +1,46 @@
+<div class="screen">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="kicker">Worklist</div>
+        <div class="page-title">Result entry</div>
+      </div>
+      <div class="spacer"></div>
+      <input
+        class="search-input"
+        [value]="store.state().eq"
+        (input)="setEq($event)"
+        placeholder="Search patient ID, mobile, name or report ID"
+      />
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="card table-card">
+      <div class="table-head entry-list-grid">
+        <div>Report</div>
+        <div>Patient</div>
+        <div>Age/Sex</div>
+        <div>Tests</div>
+        <div>Status</div>
+        <div></div>
+      </div>
+      @for (r of store.entryQueue(); track r.id) {
+        <div class="table-row entry-list-grid" (click)="open(r)">
+          <div class="mono muted-col">{{ r.id }}</div>
+          <div>
+            <div class="patient-name">{{ r.name }}</div>
+            <div class="mono patient-sub">{{ r.pid }} · {{ r.mobile }}</div>
+          </div>
+          <div class="mono">{{ r.ageSex }}</div>
+          <div class="tests-col">{{ r.tests }}</div>
+          <div><span class="badge" [class]="store.statusClass(r.status)">{{ r.status }}</span></div>
+          <div class="action-col">{{ r.actionLabel }} →</div>
+        </div>
+      }
+      @if (store.entryQueue().length === 0) {
+        <div class="empty">Nothing waiting on results. New orders will show up here.</div>
+      }
+    </div>
+  </div>
+</div>

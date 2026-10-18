@@ -1,0 +1,803 @@
+import { Injectable, computed, signal } from "@angular/core";
+import {
+  AppState,
+  DraftRow,
+  Panel,
+  PanelRow,
+  Patient,
+  Report,
+  ReportStatus,
+  RegForm,
+  RowType,
+} from "./models";
+import { CATALOG_SEED, PATIENTS_SEED, REPORTS_SEED, TODAY_AD, TODAY_BS } from "./data";
+
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v));
+}
+
+export interface DecoratedRow {
+  id: string;
+  date: string;
+  pid: string;
+  name: string;
+  mobile: string;
+  ageSex: string;
+  tests: string;
+  status: ReportStatus;
+  actionLabel: string;
+  actionScreen: "entry" | "print";
+  report: Report;
+}
+
+@Injectable({ providedIn: "root" })
+export class LabStore {
+  catalog = signal<Panel[]>(clone(CATALOG_SEED));
+  private retired: Record<string, string> = {};
+
+  readonly today = { ad: TODAY_AD, bs: TODAY_BS };
+
+  state = signal<AppState>({
+    patients: clone(PATIENTS_SEED),
+    reports: clone(REPORTS_SEED),
+    activeReport: "R-26-0391",
+    patient: { ...clone(PATIENTS_SEED)[0], bill: "39530" },
+    selected: ["cbc", "sugar"],
+    included: { sugar: ["PP"] },
+    values: clone(REPORTS_SEED[0].values),
+    entryTab: "cbc",
+    dq: "",
+    rq: "",
+    q: "",
+    eq: "",
+    pq: "",
+    patientDraft: null,
+    dashFilter: "All",
+    statusFilter: "All",
+    printHeader: true,
+    arrows: true,
+    ranges: true,
+    reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+    tpl: "cbc",
+    draft: null,
+    confirmDel: false,
+    banner: "",
+  });
+
+  // ---------------------------------------------------------------- lookups
+  panel(id: string): Panel | undefined {
+    return this.catalog().find((c) => c.id === id);
+  }
+
+  refOf(row: PanelRow): string {
+    return this.state().patient.sex === "M" ? row.m ?? "" : row.f ?? "";
+  }
+
+  rowsOf(pl: Panel): PanelRow[] {
+    const inc = this.state().included[pl.id];
+    if (!inc) return pl.rows;
+    return pl.rows.filter((r) => {
+      if (!r.head) return inc.includes(r.name);
+      const i = pl.rows.indexOf(r);
+      for (let k = i + 1; k < pl.rows.length && pl.rows[k].sub; k++) {
+        if (inc.includes(pl.rows[k].name)) return true;
+      }
+      return false;
+    });
+  }
+
+  limits(ref: string | undefined): { lo?: number; hi?: number } | null {
+    if (!ref) return null;
+    const lt = ref.match(/^<\s*([\d.,]+)$/);
+    if (lt) return { hi: parseFloat(lt[1].replace(/,/g, "")) };
+    const rg = ref.match(/^([\d.,]+)\s*-\s*([\d.,]+)$/);
+    if (rg)
+      return {
+        lo: parseFloat(rg[1].replace(/,/g, "")),
+        hi: parseFloat(rg[2].replace(/,/g, "")),
+      };
+    return null;
+  }
+
+  flagOf(row: PanelRow, raw: string | undefined): "" | "H" | "L" {
+    if (row.head || raw === undefined || raw === "") return "";
+    const n = parseFloat(String(raw).replace(/,/g, ""));
+    const l = this.limits(this.refOf(row));
+    if (!l || isNaN(n)) return "";
+    if (l.hi !== undefined && n > l.hi) return "H";
+    if (l.lo !== undefined && n < l.lo) return "L";
+    return "";
+  }
+
+  fmt(v: string | undefined): string {
+    if (v === undefined) return "";
+    const n = parseFloat(String(v).replace(/,/g, ""));
+    return isNaN(n) ? v : n >= 1000 ? n.toLocaleString("en-US") : v;
+  }
+
+  filled(id: string): [number, number] {
+    const pl = this.panel(id);
+    if (!pl) return [0, 0];
+    const rows = this.rowsOf(pl).filter((r) => !r.head);
+    const v = this.state().values[id] || {};
+    return [rows.filter((r) => v[r.name]).length, rows.length];
+  }
+
+  decorate(rep: Report): DecoratedRow {
+    const pat = this.state().patients.find((x) => x.id === rep.pid);
+    const names = rep.tests
+      .map((t) => {
+        const pl = this.panel(t);
+        if (pl) return pl.name.replace(/ \(.*\)$/, "");
+        return (
+          (this.retired[t] || "Removed test").replace(/ \(.*\)$/, "") +
+          " (deleted)"
+        );
+      })
+      .join(" · ");
+    const action: { label: string; screen: "entry" | "print" } =
+      rep.status === "Ordered"
+        ? { label: "Enter", screen: "entry" }
+        : rep.status === "Results entered"
+          ? { label: "Preview", screen: "print" }
+          : { label: "Open", screen: "print" };
+    return {
+      id: rep.id,
+      date: rep.date,
+      pid: rep.pid,
+      name: pat?.name ?? "",
+      mobile: pat?.mobile ?? "",
+      ageSex: `${pat?.age ?? ""}Y/${pat?.sex ?? ""}`,
+      tests: names,
+      status: rep.status,
+      actionLabel: action.label,
+      actionScreen: action.screen,
+      report: rep,
+    };
+  }
+
+  private slug(status: ReportStatus): string {
+    return status.toLowerCase().replace(/\s+/g, "-");
+  }
+  statusClass(status: ReportStatus): string {
+    return "status-" + this.slug(status);
+  }
+  railClass(status: ReportStatus): string {
+    return "rail-" + this.slug(status);
+  }
+
+  findReport(id: string): Report | undefined {
+    return this.state().reports.find((r) => r.id === id);
+  }
+
+  openReport(rep: Report): "entry" | "print" {
+    const pat =
+      this.state().patients.find((p) => p.id === rep.pid) ??
+      this.state().patients[0];
+    const dec = this.decorate(rep);
+    this.state.update((s) => ({
+      ...s,
+      activeReport: rep.id,
+      patient: { ...pat, bill: rep.bill },
+      selected: rep.tests.slice(),
+      included: { ...rep.included },
+      values: clone(rep.values || {}),
+      entryTab: rep.tests[0],
+      banner: "",
+    }));
+    return dec.actionScreen;
+  }
+
+  // ------------------------------------------------------------- computed
+  readonly sexWord = computed(() => (this.state().patient.sex === "M" ? "Male" : "Female"));
+
+  readonly todays = computed(() => this.state().reports.filter((r) => r.today));
+  readonly pendingCount = computed(
+    () => this.state().reports.filter((r) => r.status === "Ordered").length,
+  );
+  readonly enteredCount = computed(
+    () =>
+      this.state().reports.filter((r) => r.status === "Results entered")
+        .length,
+  );
+  readonly printedTodayCount = computed(
+    () => this.todays().filter((r) => r.status === "Printed").length,
+  );
+
+  readonly stats = computed(() => [
+    { label: "Registered today", value: this.todays().length, note: "" },
+    { label: "Awaiting results", value: this.pendingCount(), note: "in lab" },
+    { label: "Ready to verify", value: this.enteredCount(), note: "" },
+    { label: "Printed today", value: this.printedTodayCount(), note: "" },
+  ]);
+
+  readonly navCounts = computed(() => ({
+    dash: this.todays().length,
+    entry: this.pendingCount() + this.enteredCount(),
+    reports: this.state().reports.length,
+    patients: this.state().patients.length,
+    templates: this.catalog().length,
+  }));
+
+  readonly dashAll = computed(() => {
+    const dq = this.state().dq.trim().toLowerCase();
+    let list = this.todays().map((r) => this.decorate(r));
+    if (dq)
+      list = list.filter((r) =>
+        (r.name + " " + r.pid + " " + r.mobile + " " + r.id)
+          .toLowerCase()
+          .includes(dq),
+      );
+    return list;
+  });
+
+  readonly dashRows = computed(() => {
+    const f = this.state().dashFilter;
+    const all = this.dashAll();
+    if (f === "All") return all;
+    return all.filter((r) =>
+      f === "Pending" ? r.status === "Ordered" : r.status !== "Ordered",
+    );
+  });
+
+  readonly dashCount = computed(() => {
+    const dq = this.state().dq.trim();
+    return dq
+      ? `${this.dashAll().length}/${this.todays().length}`
+      : `${this.todays().length}`;
+  });
+
+  readonly entryQueue = computed(() => {
+    const eq = this.state().eq.trim().toLowerCase();
+    return this.state()
+      .reports.filter((r) => r.status === "Ordered" || r.status === "Results entered")
+      .map((r) => this.decorate(r))
+      .filter((r) =>
+        !eq || (r.name + " " + r.pid + " " + r.mobile + " " + r.id).toLowerCase().includes(eq),
+      )
+      .map((r) => ({ ...r, actionLabel: "Enter result" }));
+  });
+
+  readonly reportRows = computed(() => {
+    const rq = this.state().rq.trim().toLowerCase();
+    const sf = this.state().statusFilter;
+    return this.state()
+      .reports.filter((r) => {
+        if (!rq) return true;
+        const pat = this.state().patients.find((x) => x.id === r.pid);
+        return [r.id, r.pid, r.bill, pat?.name, pat?.mobile].some((v) =>
+          String(v ?? "")
+            .toLowerCase()
+            .includes(rq),
+        );
+      })
+      .filter((r) => sf === "All" || r.status === sf)
+      .map((r) => this.decorate(r));
+  });
+
+  readonly statusChips = computed(() => {
+    const reports = this.state().reports;
+    const sf = this.state().statusFilter;
+    const labels: ("All" | ReportStatus)[] = [
+      "All",
+      "Ordered",
+      "Results entered",
+      "Verified",
+      "Printed",
+    ];
+    return labels.map((f) => ({
+      label: f,
+      n: f === "All" ? reports.length : reports.filter((r) => r.status === f).length,
+      active: sf === f,
+    }));
+  });
+
+  readonly patientRows = computed(() => {
+    const pq = this.state().pq.trim().toLowerCase();
+    const reports = this.state().reports;
+    return this.state()
+      .patients.filter(
+        (p) =>
+          !pq ||
+          [p.id, p.name, p.mobile].some((v) => String(v ?? "").toLowerCase().includes(pq)),
+      )
+      .map((p) => {
+        const visits = reports.filter((r) => r.pid === p.id);
+        return {
+          patient: p,
+          id: p.id,
+          name: p.name,
+          age: p.age,
+          sex: p.sex,
+          mobile: p.mobile,
+          address: p.address,
+          ref: p.ref,
+          visits: visits.length,
+          lastDate: visits[0]?.date ?? "—",
+        };
+      });
+  });
+
+  readonly activePanels = computed(() =>
+    this.state()
+      .selected.map((id) => this.panel(id))
+      .filter((p): p is Panel => !!p),
+  );
+
+  readonly entryPanel = computed(
+    () => this.panel(this.state().entryTab) ?? this.activePanels()[0] ?? this.catalog()[0],
+  );
+
+  readonly panelTabs = computed(() =>
+    this.activePanels().map((pl) => {
+      const [d, t] = this.filled(pl.id);
+      return {
+        id: pl.id,
+        label: pl.name.replace(/ \(.*\)$/, ""),
+        done: `${d}/${t}`,
+        pct: t ? Math.round((d / t) * 100) + "%" : "0%",
+        active: pl.id === this.entryPanel().id,
+      };
+    }),
+  );
+
+  readonly entryRows = computed(() => {
+    const pl = this.entryPanel();
+    const vals = this.state().values[pl.id] || {};
+    return this.rowsOf(pl).map((r) => {
+      const v = vals[r.name] || "";
+      const fl = this.flagOf(r, v);
+      return {
+        name: r.name,
+        isInput: !r.head,
+        value: v,
+        unit: r.head ? "" : r.unit ?? "",
+        ref: r.head ? "" : this.refOf(r),
+        indent: r.sub ? "16px" : "0px",
+        bold: !!(r.bold || r.head),
+        head: !!r.head,
+        flag: fl,
+      };
+    });
+  });
+
+  readonly printPanels = computed(() => {
+    const s = this.state();
+    return this.activePanels().map((pl) => ({
+      id: pl.id,
+      heading: pl.name.toUpperCase(),
+      rows: this.rowsOf(pl)
+        .filter((r) => r.head || (s.values[pl.id] || {})[r.name])
+        .map((r) => {
+          const v = (s.values[pl.id] || {})[r.name] || "";
+          const fl = this.flagOf(r, v);
+          return {
+            name: r.name,
+            value: r.head ? "" : this.fmt(v),
+            unit: r.head ? "" : r.unit ?? "",
+            ref: r.head || !s.ranges ? "" : this.refOf(r),
+            indent: r.sub ? "18px" : "0px",
+            bold: !!(r.bold || r.head),
+            arrow: s.arrows && fl ? (fl === "H" ? "↑" : "↓") : "",
+            high: fl === "H",
+          };
+        }),
+    }));
+  });
+
+  readonly totalPrintRows = computed(() =>
+    this.state().selected.reduce((n, id) => {
+      const pl = this.panel(id);
+      return pl ? n + this.rowsOf(pl).filter((r) => !r.head).length : n;
+    }, 0),
+  );
+
+  readonly cards = computed(() => {
+    const q = this.state().q.trim().toLowerCase();
+    const s = this.state();
+    return this.catalog()
+      .filter(
+        (c) =>
+          !q ||
+          c.name.toLowerCase().includes(q) ||
+          c.rows.some((r) => r.name.toLowerCase().includes(q)),
+      )
+      .map((c) => {
+        const on = s.selected.includes(c.id);
+        const valueRows = c.rows.filter((r) => !r.head);
+        const inc = s.included[c.id] || valueRows.map((r) => r.name);
+        return {
+          id: c.id,
+          name: c.name,
+          on,
+          count: on ? `${inc.length}/${valueRows.length}` : `${valueRows.length}`,
+          preview:
+            valueRows
+              .slice(0, 5)
+              .map((r) => r.name)
+              .join(", ") + (c.rows.length > 5 ? "…" : ""),
+          rows: valueRows.map((r) => ({ name: r.name, on: inc.includes(r.name) })),
+        };
+      });
+  });
+
+  readonly tplOptions = computed(() =>
+    this.catalog().map((c) => ({ id: c.id, name: c.name })),
+  );
+  readonly tplPanel = computed(
+    () => this.panel(this.state().tpl) ?? this.catalog()[0],
+  );
+
+  readonly editing = computed(() => {
+    const pl = this.tplPanel();
+    return {
+      name: pl?.name ?? "",
+      rows: (pl?.rows ?? []).map((r) => ({
+        name: r.name,
+        unit: r.head ? "" : r.unit || "—",
+        refM: r.head ? "" : r.m || "—",
+        refF: r.head ? "" : r.f || "—",
+        indent: r.sub ? "14px" : "0px",
+        bold: !!(r.bold || r.head),
+        head: !!r.head,
+      })),
+    };
+  });
+
+  readonly deleteUsage = computed(() => {
+    const pl = this.tplPanel();
+    if (!pl) return "";
+    const n = this.state().reports.filter((r) => r.tests.includes(pl.id)).length;
+    return n
+      ? ` Used by ${n} existing report${n === 1 ? "" : "s"} — they keep the printed values.`
+      : "";
+  });
+
+  readonly draftRows = computed(() => this.state().draft?.rows ?? []);
+  readonly draftTitle = computed(() => this.state().draft?.name || "Untitled test");
+  readonly draftPreview = computed(() =>
+    this.draftRows()
+      .filter((r) => r.name.trim())
+      .map((r) => ({
+        name: r.name,
+        indent: r.type === "sub" ? "12px" : "0px",
+        head: r.type === "head",
+        dash: r.type === "head" ? "" : "—",
+        ref: r.type === "head" ? "" : r.f || r.m || "",
+      })),
+  );
+  readonly draftCount = computed(
+    () => this.draftRows().filter((r) => r.name.trim()).length,
+  );
+  readonly draftSexCount = computed(
+    () => this.draftRows().filter((r) => r.m && r.f && r.m !== r.f).length,
+  );
+
+  // ------------------------------------------------------------ mutations
+  setDq(v: string) {
+    this.state.update((s) => ({ ...s, dq: v }));
+  }
+  setRq(v: string) {
+    this.state.update((s) => ({ ...s, rq: v }));
+  }
+  setQ(v: string) {
+    this.state.update((s) => ({ ...s, q: v }));
+  }
+  setEq(v: string) {
+    this.state.update((s) => ({ ...s, eq: v }));
+  }
+  setPq(v: string) {
+    this.state.update((s) => ({ ...s, pq: v }));
+  }
+
+  editPatient(id: string) {
+    const p = this.state().patients.find((x) => x.id === id);
+    if (!p) return;
+    this.state.update((s) => ({ ...s, patientDraft: { ...p } }));
+  }
+  cancelPatientEdit() {
+    this.state.update((s) => ({ ...s, patientDraft: null }));
+  }
+  setPatientDraftField(key: keyof Patient, v: string) {
+    this.state.update((s) => ({
+      ...s,
+      patientDraft: s.patientDraft ? { ...s.patientDraft, [key]: v } : s.patientDraft,
+    }));
+  }
+  savePatientEdit(): { ok: boolean } {
+    const draft = this.state().patientDraft;
+    if (!draft || !draft.name.trim()) {
+      this.state.update((s) => ({ ...s, banner: "Enter a patient name before saving." }));
+      return { ok: false };
+    }
+    this.state.update((s) => ({
+      ...s,
+      patients: s.patients.map((p) => (p.id === draft.id ? { ...draft } : p)),
+      patient: s.patient.id === draft.id ? { ...draft, bill: s.patient.bill } : s.patient,
+      patientDraft: null,
+      banner: `Patient "${draft.name}" updated.`,
+    }));
+    return { ok: true };
+  }
+  setDashFilter(f: AppState["dashFilter"]) {
+    this.state.update((s) => ({ ...s, dashFilter: f }));
+  }
+  setStatusFilter(f: AppState["statusFilter"]) {
+    this.state.update((s) => ({ ...s, statusFilter: f }));
+  }
+  clearBanner() {
+    this.state.update((s) => ({ ...s, banner: "" }));
+  }
+
+  setReg(key: keyof RegForm, v: string) {
+    this.state.update((s) => ({ ...s, reg: { ...s.reg, [key]: v } }));
+  }
+  clearReg() {
+    this.state.update((s) => ({
+      ...s,
+      reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+    }));
+  }
+
+  toggleCard(id: string) {
+    this.state.update((s) => ({
+      ...s,
+      selected: s.selected.includes(id)
+        ? s.selected.filter((x) => x !== id)
+        : [...s.selected, id],
+    }));
+  }
+  includeAll(id: string) {
+    this.state.update((s) => {
+      const n = { ...s.included };
+      delete n[id];
+      return { ...s, included: n };
+    });
+  }
+  toggleAnalyte(panelId: string, name: string) {
+    const pl = this.panel(panelId);
+    if (!pl) return;
+    this.state.update((s) => {
+      const cur = s.included[panelId] || pl.rows.filter((r) => !r.head).map((r) => r.name);
+      const on = cur.includes(name);
+      return {
+        ...s,
+        included: {
+          ...s.included,
+          [panelId]: on ? cur.filter((x) => x !== name) : [...cur, name],
+        },
+      };
+    });
+  }
+
+  get nextPid(): string {
+    const s = this.state();
+    return "P-" + (1048 + s.patients.length - PATIENTS_SEED.length);
+  }
+
+  saveOrder(): { ok: boolean; reportId?: string } {
+    const s = this.state();
+    const name = s.reg.name || s.patient.name;
+    if (!name || !s.selected.length) {
+      this.state.update((st) => ({
+        ...st,
+        banner: "Enter a patient name and pick at least one test.",
+      }));
+      return { ok: false };
+    }
+    const num = 394 + (s.reports.length - REPORTS_SEED.length);
+    const id = "R-26-0" + num;
+    let pat: Patient = s.patient;
+    if (s.reg.name) {
+      pat = {
+        id: s.patients.length
+          ? "P-" + (1048 + s.patients.length - PATIENTS_SEED.length)
+          : "P-1048",
+        name: s.reg.name,
+        age: s.reg.age,
+        sex: s.reg.sex,
+        mobile: s.reg.mobile,
+        address: s.reg.address,
+        ref: s.reg.ref,
+        bill: "",
+      };
+    }
+    this.state.update((st) => ({
+      ...st,
+      patients: st.reg.name ? [pat, ...st.patients] : st.patients,
+      patient: { ...pat },
+      reports: [
+        {
+          id,
+          pid: pat.id,
+          bill: pat.bill || "—",
+          date: TODAY_AD,
+          today: true,
+          tests: st.selected.slice(),
+          included: { ...st.included },
+          status: "Ordered",
+          values: {},
+        },
+        ...st.reports,
+      ],
+      activeReport: id,
+      values: {},
+      reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+      banner: `Order ${id} saved for ${pat.name}. It is waiting in Result entry.`,
+    }));
+    return { ok: true, reportId: id };
+  }
+
+  setEntryTab(id: string) {
+    this.state.update((s) => ({ ...s, entryTab: id }));
+  }
+  setEntryValue(panelId: string, name: string, val: string) {
+    this.state.update((s) => ({
+      ...s,
+      values: {
+        ...s.values,
+        [panelId]: { ...(s.values[panelId] || {}), [name]: val },
+      },
+    }));
+  }
+  saveResults() {
+    this.state.update((st) => ({
+      ...st,
+      reports: st.reports.map((r) =>
+        r.id === st.activeReport
+          ? {
+              ...r,
+              values: clone(st.values),
+              status: r.status === "Ordered" ? "Results entered" : r.status,
+            }
+          : r,
+      ),
+      banner: `Results saved for ${st.activeReport}.`,
+    }));
+  }
+
+  toggleLetterhead() {
+    this.state.update((s) => ({ ...s, printHeader: !s.printHeader }));
+  }
+  toggleArrows() {
+    this.state.update((s) => ({ ...s, arrows: !s.arrows }));
+  }
+  toggleRanges() {
+    this.state.update((s) => ({ ...s, ranges: !s.ranges }));
+  }
+  printReport() {
+    this.state.update((st) => ({
+      ...st,
+      reports: st.reports.map((r) =>
+        r.id === st.activeReport ? { ...r, status: "Printed" as ReportStatus } : r,
+      ),
+      banner: `${st.activeReport} verified and sent to the printer.`,
+    }));
+  }
+
+  pickTemplate(id: string) {
+    this.state.update((s) => ({ ...s, tpl: id, draft: null, confirmDel: false }));
+  }
+
+  blankRow(): DraftRow {
+    return { name: "", unit: "", m: "", f: "", type: "value" };
+  }
+
+  openNewDraft() {
+    this.state.update((s) => ({
+      ...s,
+      draft: { id: null, name: "", rows: [this.blankRow(), this.blankRow(), this.blankRow()] },
+      confirmDel: false,
+    }));
+  }
+
+  editTemplate() {
+    const pl = this.tplPanel();
+    if (!pl) return;
+    this.state.update((s) => ({
+      ...s,
+      confirmDel: false,
+      draft: {
+        id: pl.id,
+        name: pl.name,
+        rows: pl.rows.map((r) => ({
+          name: r.name,
+          unit: r.unit || "",
+          m: r.m || "",
+          f: r.f || "",
+          type: (r.head ? "head" : r.sub ? "sub" : "value") as RowType,
+        })),
+      },
+    }));
+  }
+  cancelDraft() {
+    this.state.update((s) => ({ ...s, draft: null }));
+  }
+  setDraftName(v: string) {
+    this.state.update((s) => ({
+      ...s,
+      draft: s.draft ? { ...s.draft, name: v } : s.draft,
+    }));
+  }
+  addDraftRow() {
+    this.state.update((s) => ({
+      ...s,
+      draft: s.draft ? { ...s.draft, rows: [...s.draft.rows, this.blankRow()] } : s.draft,
+    }));
+  }
+  removeDraftRow(i: number) {
+    this.state.update((s) => ({
+      ...s,
+      draft: s.draft ? { ...s.draft, rows: s.draft.rows.filter((_, k) => k !== i) } : s.draft,
+    }));
+  }
+  patchDraftRow(i: number, patch: Partial<DraftRow>) {
+    this.state.update((s) => ({
+      ...s,
+      draft: s.draft
+        ? { ...s.draft, rows: s.draft.rows.map((r, k) => (k === i ? { ...r, ...patch } : r)) }
+        : s.draft,
+    }));
+  }
+
+  askDelete() {
+    this.state.update((s) => ({ ...s, confirmDel: true }));
+  }
+  cancelDelete() {
+    this.state.update((s) => ({ ...s, confirmDel: false }));
+  }
+  doDelete() {
+    const pl = this.tplPanel();
+    if (!pl) return;
+    this.retired[pl.id] = pl.name;
+    const cat = this.catalog();
+    const i = cat.findIndex((c) => c.id === pl.id);
+    const next = cat.filter((c) => c.id !== pl.id);
+    const nextId = next[Math.min(i, next.length - 1)]?.id ?? "";
+    this.catalog.set(next);
+    this.state.update((s) => ({
+      ...s,
+      confirmDel: false,
+      draft: null,
+      tpl: nextId,
+      selected: s.selected.filter((x) => x !== pl.id),
+      banner: `Template "${pl.name}" deleted from the catalog.`,
+    }));
+  }
+
+  saveDraft() {
+    const s = this.state();
+    const d = s.draft;
+    if (!d) return;
+    const name = d.name || "Untitled test";
+    const rows: PanelRow[] = d.rows
+      .filter((r) => r.name.trim())
+      .map((r) => ({
+        name: r.name.trim(),
+        unit: r.type === "head" ? "" : r.unit,
+        m: r.type === "head" ? "" : r.m,
+        f: r.type === "head" ? "" : r.f,
+        head: r.type === "head" || undefined,
+        sub: r.type === "sub" || undefined,
+      }));
+    if (d.id) {
+      const id = d.id;
+      this.catalog.update((cat) => cat.map((c) => (c.id === id ? { ...c, name, rows } : c)));
+      this.state.update((st) => ({
+        ...st,
+        draft: null,
+        tpl: id,
+        banner: `Template "${name}" updated. Future orders use the new ranges.`,
+      }));
+      return;
+    }
+    const id = "tpl" + (this.catalog().length + 1);
+    this.catalog.update((cat) => [...cat, { id, name, heading: name.toUpperCase() + " REPORT", rows }]);
+    this.state.update((st) => ({
+      ...st,
+      draft: null,
+      tpl: id,
+      banner: `Template "${name}" saved to the catalog.`,
+    }));
+  }
+}

@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: oklch(0.97 0.006 95); }
+  * { box-sizing: border-box; }
+  input, select, button, textarea { font-family: inherit; color: inherit; }
+  a { color: oklch(0.44 0.075 195); text-decoration: none; }
+  a:hover { color: oklch(0.36 0.075 195); }
+  input:focus, select:focus { outline: 2px solid oklch(0.58 0.09 195); outline-offset: -1px; }
+  input::placeholder { color: oklch(0.7 0.008 95); }
+  ::-webkit-scrollbar { width: 10px; height: 10px }
+  ::-webkit-scrollbar-thumb { background: oklch(0.85 0.008 95); border-radius: 99px; border: 3px solid transparent; background-clip: content-box }
+</style>
+</helmet>
+
+<div style="font-family: 'Instrument Sans', Helvetica, sans-serif; color: oklch(0.25 0.015 240); background: oklch(0.97 0.006 95); height: 100vh; min-height: 780px; display: flex; flex-direction: column; overflow: auto">
+
+  <div style="flex: none; height: 46px; min-width: {{ shellMin }}; display: flex; align-items: center; gap: 14px; padding: 0 18px; background: white; border-bottom: 1px solid oklch(0.9 0.008 95)">
+    <div style="width: 24px; height: 24px; border-radius: 5px; background: oklch(0.44 0.075 195); color: white; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600">SL</div>
+    <div style="font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em">Sarbottam Hospital · Pathology</div>
+    <div style="width: 1px; height: 16px; background: oklch(0.9 0.008 95)"></div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.55 0.012 240)">{{ todayAD }} · B.S. {{ todayBS }}</div>
+    <div style="flex: 1"></div>
+    <div style="font-size: 12.5px; color: oklch(0.5 0.012 240)">R. Prasad · Lab Technologist</div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; display: flex; min-width: {{ shellMin }}">
+
+    <div style="width: 214px; flex: none; background: white; border-right: 1px solid oklch(0.9 0.008 95); display: flex; flex-direction: column; padding: 14px 12px">
+      <div onClick="{{ goNew }}" style="display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 7px; background: oklch(0.44 0.075 195); color: white; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">
+        <div style="font-size: 15px; line-height: 1; margin-top: -1px">+</div>
+        <div>New report</div>
+      </div>
+      <div style="height: 14px"></div>
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div onClick="{{ n.go }}" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; margin-bottom: 1px; background: {{ n.bg }}; color: {{ n.fg }}; border-left: 2px solid {{ n.mark }}" style-hover="background: oklch(0.965 0.008 95)">
+          <div style="flex: 1">{{ n.label }}</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ n.countFg }}">{{ n.count }}</div>
+        </div>
+      </sc-for>
+      <div style="flex: 1"></div>
+      <div style="font-size: 11.5px; color: oklch(0.6 0.012 240); line-height: 1.5; border-top: 1px solid oklch(0.93 0.008 95); padding-top: 12px">Templates define analytes and ranges. Orders pick from them; blank rows never print.</div>
+    </div>
+
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+
+      <sc-if value="{{ hasBanner }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 26px; background: oklch(0.96 0.03 150); color: oklch(0.38 0.09 152); font-size: 12.5px; font-weight: 500; border-bottom: 1px solid oklch(0.9 0.03 150)">
+          <div style="flex: 1">{{ banner }}</div>
+          <div onClick="{{ clearBanner }}" style="cursor: pointer; font-size: 15px; line-height: 1; opacity: 0.6">×</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="flex: 1; min-height: 0; overflow: auto; padding: 24px 26px 34px">
+          <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Worklist</div>
+              <div style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 600; letter-spacing: -0.015em; margin-top: 2px">Dashboard</div>
+            </div>
+            <div style="flex: 1"></div>
+            <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; padding: 0 11px; width: 320px; height: 36px">
+              <div style="font-size: 13px; color: oklch(0.6 0.012 240)">⌕</div>
+              <input value="{{ dq }}" onChange="{{ setDq }}" placeholder="Search name, patient ID, mobile or report ID" style="flex: 1; min-width: 0; border: none; background: transparent; font-size: 12.5px; padding: 0" />
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.6 0.012 240)">{{ dCount }}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; margin-top: 18px; overflow: hidden">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="flex: 1; padding: 15px 18px; border-left: 1px solid oklch(0.94 0.008 95)">
+                <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">{{ s.label }}</div>
+                <div style="display: flex; align-items: baseline; gap: 7px; margin-top: 6px">
+                  <div style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 600; line-height: 1; color: {{ s.color }}">{{ s.value }}</div>
+                  <div style="font-size: 11.5px; color: oklch(0.6 0.012 240)">{{ s.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: grid; grid-template-columns: minmax(770px, 1fr); gap: 18px; margin-top: 18px; align-items: start">
+            <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; overflow-x: auto">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid oklch(0.94 0.008 95)">
+                <div style="font-size: 13px; font-weight: 600; flex: 1">Today's reports</div>
+                <sc-for list="{{ dashFilters }}" as="f" hint-placeholder-count="3">
+                  <div onClick="{{ f.pick }}" style="font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; background: {{ f.bg }}; color: {{ f.fg }}">{{ f.label }}</div>
+                </sc-for>
+              </div>
+              <div style="display: grid; grid-template-columns: 100px minmax(130px, 1.3fr) 62px minmax(150px, 1.5fr) 112px 92px; gap: 12px; min-width: 748px; padding: 9px 18px; background: oklch(0.98 0.006 95); border-bottom: 1px solid oklch(0.94 0.008 95); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">
+                <div>Report</div><div>Patient</div><div>Age/Sex</div><div>Tests</div><div>Status</div><div></div>
+              </div>
+              <sc-for list="{{ dashRows }}" as="r" hint-placeholder-count="3">
+                <div style="display: grid; grid-template-columns: 100px minmax(130px, 1.3fr) 62px minmax(150px, 1.5fr) 112px 92px; gap: 12px; min-width: 748px; padding: 12px 18px; border-bottom: 1px solid oklch(0.96 0.006 95); align-items: center; font-size: 13px; border-left: 3px solid {{ r.rail }}" style-hover="background: oklch(0.985 0.008 195)">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ r.id }}</div>
+                  <div>
+                    <div style="font-weight: 500">{{ r.name }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.58 0.012 240); margin-top: 2px">{{ r.pid }} · {{ r.mobile }}</div>
+                  </div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px">{{ r.ageSex }}</div>
+                  <div style="font-size: 12px; color: oklch(0.48 0.012 240); line-height: 1.4">{{ r.tests }}</div>
+                  <div><span style="font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 5px; background: {{ r.sbg }}; color: {{ r.sfg }}">{{ r.status }}</span></div>
+                  <div onClick="{{ r.open }}" style="font-size: 12px; font-weight: 600; color: oklch(0.44 0.075 195); cursor: pointer; text-align: right">{{ r.action }} →</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ dashEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 26px 18px; font-size: 12.5px; color: oklch(0.55 0.012 240)">Nothing matches “{{ dq }}”. Older visits live in All reports.</div>
+              </sc-if>
+            </div>
+
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; min-height: 0; display: flex">
+          <div style="flex: 1; min-width: 0; overflow: auto; padding: 24px 26px 40px">
+            <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Registration</div>
+            <div style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 600; letter-spacing: -0.015em; margin-top: 2px">New report</div>
+
+            <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; padding: 18px; margin-top: 18px">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 14px">
+                <sc-for list="{{ regFields }}" as="f" hint-placeholder-count="6">
+                  <label style="display: flex; flex-direction: column; gap: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">{{ f.label }}
+                    <input value="{{ f.value }}" onChange="{{ f.set }}" placeholder="{{ f.ph }}" style="font-family: {{ f.font }}; font-size: 13.5px; font-weight: 500; padding: 9px 11px; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; background: oklch(0.985 0.005 95); text-transform: none; letter-spacing: 0" />
+                  </label>
+                </sc-for>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">Sex
+                  <select value="{{ regSex }}" onChange="{{ setRegSex }}" style="font-size: 13.5px; padding: 9px 11px; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; background: oklch(0.985 0.005 95); text-transform: none; letter-spacing: 0">
+                    <option value="F">Female</option>
+                    <option value="M">Male</option>
+                  </select>
+                </label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: oklch(0.55 0.012 240)">
+                <div>Patient ID {{ nextPid }} assigned on save</div>
+                <div style="flex: 1"></div>
+                <div onClick="{{ clearReg }}" style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer">Clear form</div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px; margin-top: 24px">
+              <div style="font-size: 13px; font-weight: 600">Tests for this visit</div>
+              <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Filter tests" style="font-size: 12.5px; padding: 8px 11px; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; background: white; width: 220px" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 12px">
+              <sc-for list="{{ cards }}" as="c" hint-placeholder-count="6">
+                <div style="background: {{ c.cardBg }}; border: 1px solid {{ c.border }}; border-radius: 10px; padding: 14px 16px">
+                  <div onClick="{{ c.toggle }}" style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer">
+                    <div style="width: 17px; height: 17px; border-radius: 4px; flex: none; margin-top: 2px; border: 1.5px solid {{ c.boxBorder }}; background: {{ c.boxBg }}; color: white; font-size: 11px; line-height: 15px; text-align: center; font-weight: 700">{{ c.tick }}</div>
+                    <div style="flex: 1; min-width: 0">
+                      <div style="font-size: 13px; font-weight: 600">{{ c.name }}</div>
+                      <div style="font-size: 11.5px; color: oklch(0.55 0.012 240); margin-top: 4px; line-height: 1.5">{{ c.preview }}</div>
+                    </div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.58 0.012 240); flex: none">{{ c.count }}</div>
+                  </div>
+                  <sc-if value="{{ c.on }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top: 12px; border-top: 1px solid oklch(0.94 0.008 95); padding-top: 11px">
+                      <div style="display: flex; align-items: center; gap: 10px">
+                        <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600; flex: 1">Analytes to print</div>
+                        <div onClick="{{ c.all }}" style="font-size: 11.5px; font-weight: 600; color: oklch(0.44 0.075 195); cursor: pointer">All</div>
+                      </div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px">
+                        <sc-for list="{{ c.rows }}" as="a" hint-placeholder-count="6">
+                          <div onClick="{{ a.toggle }}" style="font-size: 11.5px; font-weight: 500; padding: 5px 9px; border-radius: 5px; cursor: pointer; border: 1px solid {{ a.border }}; background: {{ a.bg }}; color: {{ a.fg }}">{{ a.name }}</div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="width: 268px; flex: none; border-left: 1px solid oklch(0.9 0.008 95); background: white; padding: 22px 18px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+            <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Order summary</div>
+            <div style="font-size: 13px; font-weight: 600; line-height: 1.4">{{ summaryName }}</div>
+            <div style="display: flex; flex-direction: column; gap: 7px">
+              <sc-for list="{{ summaryLines }}" as="l" hint-placeholder-count="3">
+                <div style="display: flex; justify-content: space-between; gap: 10px; font-size: 12px">
+                  <div style="color: oklch(0.5 0.012 240)">{{ l.k }}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; color: {{ l.color }}">{{ l.v }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="border-top: 1px solid oklch(0.94 0.008 95); padding-top: 12px; display: flex; flex-direction: column; gap: 6px">
+              <sc-for list="{{ selectedNames }}" as="n" hint-placeholder-count="2">
+                <div style="font-size: 12px; color: oklch(0.35 0.012 240)">{{ n }}</div>
+              </sc-for>
+            </div>
+            <div style="flex: 1; min-height: 6px"></div>
+            <div onClick="{{ saveOrder }}" style="background: oklch(0.44 0.075 195); color: white; padding: 11px; border-radius: 7px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">Save order</div>
+            <div style="font-size: 11.5px; color: oklch(0.6 0.012 240); line-height: 1.5; text-align: center">Saved orders wait in Result entry until the sample is processed.</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEntry }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; min-height: 0; display: flex">
+          <div style="width: 244px; flex: none; border-right: 1px solid oklch(0.9 0.008 95); background: white; padding: 20px 14px; overflow: auto">
+            <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Panels</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px">
+              <sc-for list="{{ panelTabs }}" as="t" hint-placeholder-count="2">
+                <div onClick="{{ t.pick }}" style="padding: 11px 12px; border-radius: 8px; cursor: pointer; background: {{ t.bg }}; border: 1px solid {{ t.border }}">
+                  <div style="display: flex; align-items: baseline; gap: 8px">
+                    <div style="font-size: 12.5px; font-weight: 600; flex: 1">{{ t.label }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: oklch(0.5 0.012 240)">{{ t.done }}</div>
+                  </div>
+                  <div style="height: 3px; border-radius: 99px; background: oklch(0.93 0.008 95); margin-top: 8px">
+                    <div style="height: 3px; border-radius: 99px; background: oklch(0.44 0.075 195); width: {{ t.pct }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+            <div style="flex: none; padding: 18px 26px; border-bottom: 1px solid oklch(0.9 0.008 95); background: white; display: flex; align-items: center; gap: 16px">
+              <div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 600">{{ p.name }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.55 0.012 240); margin-top: 3px">{{ p.id }} · {{ p.age }}Y/{{ p.sex }} · {{ activeReport }} · Bill {{ p.bill }}</div>
+              </div>
+              <div style="flex: 1"></div>
+              <div onClick="{{ goPrint }}" style="border: 1px solid oklch(0.88 0.008 95); background: white; padding: 9px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer">Preview</div>
+              <div onClick="{{ saveResults }}" style="background: oklch(0.44 0.075 195); color: white; padding: 9px 15px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">Save results</div>
+            </div>
+
+            <div style="flex: 1; min-height: 0; overflow: auto; padding: 20px 26px 34px">
+              <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; overflow-x: auto">
+                <div style="display: grid; grid-template-columns: minmax(180px, 1.6fr) 132px 110px 150px 46px; gap: 14px; min-width: 700px; padding: 9px 18px; background: oklch(0.98 0.006 95); border-bottom: 1px solid oklch(0.94 0.008 95); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">
+                  <div>Investigation</div><div>Result</div><div>Unit</div><div>Reference</div><div></div>
+                </div>
+                <sc-for list="{{ entryRows }}" as="r" hint-placeholder-count="10">
+                  <div style="display: grid; grid-template-columns: minmax(180px, 1.6fr) 132px 110px 150px 46px; gap: 14px; min-width: 700px; padding: 8px 18px; border-bottom: 1px solid oklch(0.965 0.006 95); align-items: center; background: {{ r.rowBg }}">
+                    <div style="font-size: 13px; font-weight: {{ r.weight }}; padding-left: {{ r.indent }}; color: {{ r.nameFg }}">{{ r.name }}</div>
+                    <sc-if value="{{ r.input }}" hint-placeholder-val="{{ true }}">
+                      <input value="{{ r.value }}" onChange="{{ r.set }}" placeholder="—" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 7px 10px; border: 1px solid {{ r.inBorder }}; border-radius: 6px; background: {{ r.inBg }}; width: 100%" />
+                    </sc-if>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.55 0.012 240)">{{ r.unit }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ r.ref }}</div>
+                    <div style="font-size: 14px; font-weight: 700; color: {{ r.flagFg }}; text-align: center">{{ r.flag }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size: 11.5px; color: oklch(0.6 0.012 240); margin-top: 12px">Ranges shown are the {{ sexWord }} column from the template. Blank rows are dropped from the printed page.</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPrint }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+          <div style="flex: none; padding: 12px 26px; border-bottom: 1px solid oklch(0.9 0.008 95); background: white; display: flex; align-items: center; gap: 12px">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ activeReport }} · {{ p.name }} · 1 page A4</div>
+            <div style="flex: 1"></div>
+            <sc-for list="{{ printToggles }}" as="t" hint-placeholder-count="3">
+              <div onClick="{{ t.flip }}" style="display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: 7px; cursor: pointer; border: 1px solid {{ t.border }}; background: {{ t.bg }}; color: {{ t.fg }}">
+                <div style="font-size: 10px">{{ t.tick }}</div>
+                <div>{{ t.label }}</div>
+              </div>
+            </sc-for>
+            <div onClick="{{ printReport }}" style="background: oklch(0.44 0.075 195); color: white; padding: 9px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">Verify &amp; print</div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; overflow: auto; background: oklch(0.93 0.006 95); padding: 26px; display: flex; justify-content: center">
+            <div style="width: 794px; flex: none; background: white; box-shadow: 0 2px 16px oklch(0.3 0.02 95 / 0.16); padding: 40px 44px; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; color: oklch(0.18 0.01 240); align-self: flex-start">
+              <sc-if value="{{ printHeader }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; align-items: flex-start; gap: 18px; border-bottom: 2px solid oklch(0.3 0.015 240); padding-bottom: 12px">
+                  <div style="width: 58px; height: 58px; flex: none; border-radius: 6px; background: oklch(0.95 0.025 195); color: oklch(0.4 0.075 195); display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 21px; font-weight: 700">SH</div>
+                  <div style="flex: 1; text-align: center">
+                    <div style="font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 700; letter-spacing: -0.01em">Sarbottam Hospital Pvt. Ltd.</div>
+                    <div style="font-size: 12px; color: oklch(0.4 0.012 240); margin-top: 3px">Birgunj-8, Parsa, Nepal · 051-527755</div>
+                    <div style="font-size: 12px; color: oklch(0.4 0.012 240)">Department of Pathology</div>
+                  </div>
+                  <div style="width: 58px; flex: none"></div>
+                </div>
+              </sc-if>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 28px; padding: 14px 0 12px; border-bottom: 1px solid oklch(0.78 0.01 240)">
+                <div><b>Name:</b> {{ p.name }}</div>
+                <div><b>Bill No.:</b> {{ p.bill }}</div>
+                <div><b>Age / Sex:</b> {{ p.age }} Yrs / {{ sexWord }}</div>
+                <div><b>Date:</b> {{ todayAD }} · B.S. {{ todayBS }}</div>
+                <div><b>Referred by:</b> {{ p.ref }}</div>
+                <div><b>Report No.:</b> {{ activeReport }}</div>
+              </div>
+              <sc-for list="{{ printPanels }}" as="pl" hint-placeholder-count="2">
+                <div>
+                  <div style="font-size: 13px; font-weight: 700; text-decoration: underline; padding: 14px 0 3px">{{ pl.heading }}</div>
+                  <div style="display: grid; grid-template-columns: 1.6fr 0.8fr 0.8fr 1fr; gap: 0">
+                    <div style="font-weight: 700; padding: 5px 0; border-bottom: 1px solid oklch(0.5 0.012 240)">Investigation</div>
+                    <div style="font-weight: 700; padding: 5px 0; border-bottom: 1px solid oklch(0.5 0.012 240)">Result</div>
+                    <div style="font-weight: 700; padding: 5px 0; border-bottom: 1px solid oklch(0.5 0.012 240)">Unit</div>
+                    <div style="font-weight: 700; padding: 5px 0; border-bottom: 1px solid oklch(0.5 0.012 240)">Ref. Range</div>
+                    <sc-for list="{{ pl.rows }}" as="r" hint-placeholder-count="8">
+                      <div style="padding: 3px 0; padding-left: {{ r.indent }}; font-weight: {{ r.weight }}">{{ r.name }}</div>
+                      <div style="padding: 3px 0; font-family: 'JetBrains Mono', monospace; font-weight: {{ r.weight }}">{{ r.value }} <span style="font-weight: 700">{{ r.arrow }}</span></div>
+                      <div style="padding: 3px 0">{{ r.unit }}</div>
+                      <div style="padding: 3px 0; font-family: 'JetBrains Mono', monospace">{{ r.ref }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 56px">
+                <div style="font-size: 11px; color: oklch(0.45 0.012 240)">Printed {{ todayAD }} 10:12 · {{ activeReport }}</div>
+                <div style="text-align: center; font-size: 11.5px">
+                  <div style="width: 156px; border-top: 1px solid oklch(0.4 0.012 240); padding-top: 4px">Lab Technologist</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+          <div style="flex: none; padding: 22px 26px 16px; background: white; border-bottom: 1px solid oklch(0.9 0.008 95)">
+            <div style="display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap">
+              <div>
+                <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Records</div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 600; letter-spacing: -0.015em; margin-top: 2px">All reports</div>
+              </div>
+              <div style="flex: 1"></div>
+              <input value="{{ rq }}" onChange="{{ setRq }}" placeholder="Search patient ID, mobile, name, report or bill no." style="width: 340px; font-size: 12.5px; padding: 10px 12px; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; background: oklch(0.985 0.005 95)" />
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 14px">
+              <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="5">
+                <div onClick="{{ c.pick }}" style="display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: 6px; cursor: pointer; border: 1px solid {{ c.border }}; background: {{ c.bg }}; color: {{ c.fg }}">
+                  <div>{{ c.label }}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; opacity: 0.7">{{ c.n }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1; min-height: 0; overflow: auto; padding: 18px 26px 34px">
+            <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; overflow-x: auto">
+              <div style="display: grid; grid-template-columns: 100px 84px minmax(130px, 1.3fr) 62px minmax(150px, 1.4fr) 112px 88px; gap: 12px; min-width: 880px; padding: 9px 18px; background: oklch(0.98 0.006 95); border-bottom: 1px solid oklch(0.94 0.008 95); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">
+                <div>Report</div><div>Date</div><div>Patient</div><div>Age/Sex</div><div>Tests</div><div>Status</div><div></div>
+              </div>
+              <sc-for list="{{ reportRows }}" as="r" hint-placeholder-count="8">
+                <div style="display: grid; grid-template-columns: 100px 84px minmax(130px, 1.3fr) 62px minmax(150px, 1.4fr) 112px 88px; gap: 12px; min-width: 880px; padding: 11px 18px; border-bottom: 1px solid oklch(0.965 0.006 95); align-items: center; font-size: 13px" style-hover="background: oklch(0.985 0.008 195)">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ r.id }}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ r.date }}</div>
+                  <div>
+                    <div style="font-weight: 500">{{ r.name }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.58 0.012 240); margin-top: 2px">{{ r.pid }} · {{ r.mobile }}</div>
+                  </div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px">{{ r.ageSex }}</div>
+                  <div style="font-size: 12px; color: oklch(0.48 0.012 240); line-height: 1.4">{{ r.tests }}</div>
+                  <div><span style="font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 5px; background: {{ r.sbg }}; color: {{ r.sfg }}">{{ r.status }}</span></div>
+                  <div onClick="{{ r.open }}" style="font-size: 12px; font-weight: 600; color: oklch(0.44 0.075 195); cursor: pointer; text-align: right">{{ r.action }} →</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ reportsEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 30px 18px; font-size: 12.5px; color: oklch(0.55 0.012 240)">No report matches those filters.</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; min-height: 0; display: flex">
+          <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ false }}">
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+              <div style="flex: none; padding: 20px 26px 16px; background: white; border-bottom: 1px solid oklch(0.9 0.008 95); display: flex; align-items: flex-end; gap: 16px">
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">{{ draftKicker }}</div>
+                  <input value="{{ draft.name }}" onChange="{{ setDraftName }}" placeholder="Test name, e.g. Serum Electrolytes" style="font-family: 'Newsreader', Georgia, serif; font-size: 26px; font-weight: 600; letter-spacing: -0.015em; margin-top: 6px; width: 100%; max-width: 520px; padding: 4px 0; border: none; border-bottom: 1.5px solid oklch(0.88 0.008 95); background: transparent" />
+                </div>
+                <div style="display: flex; gap: 10px; flex: none">
+                  <div onClick="{{ cancelDraft }}" style="border: 1px solid oklch(0.88 0.008 95); background: white; padding: 9px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer">Cancel</div>
+                  <div onClick="{{ saveDraft }}" style="background: oklch(0.44 0.075 195); color: white; padding: 9px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">{{ draftSaveLabel }}</div>
+                </div>
+              </div>
+
+              <div style="flex: 1; min-height: 0; display: flex">
+                <div style="flex: 1; min-width: 0; overflow: auto; padding: 20px 26px 34px">
+                  <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; overflow-x: auto">
+                    <div style="min-width: 780px">
+                      <div style="display: grid; grid-template-columns: 26px minmax(150px, 1.5fr) 96px minmax(104px, 1fr) minmax(104px, 1fr) 152px 30px; gap: 12px; padding: 9px 16px; background: oklch(0.98 0.006 95); border-bottom: 1px solid oklch(0.94 0.008 95); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">
+                        <div>#</div><div>Analyte</div><div>Unit</div><div>Range · male</div><div>Range · female</div><div>Row type</div><div></div>
+                      </div>
+                      <sc-for list="{{ draft.rows }}" as="row" hint-placeholder-count="4">
+                        <div style="display: grid; grid-template-columns: 26px minmax(150px, 1.5fr) 96px minmax(104px, 1fr) minmax(104px, 1fr) 152px 30px; gap: 12px; padding: 7px 16px; align-items: center; border-bottom: 1px solid oklch(0.965 0.006 95); background: {{ row.rowBg }}">
+                          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: oklch(0.65 0.012 240)">{{ row.n }}</div>
+                          <input value="{{ row.name }}" onChange="{{ row.setName }}" placeholder="Analyte name" style="font-size: 13px; font-weight: {{ row.weight }}; padding: 7px 9px; margin-left: {{ row.indent }}; border: 1px solid oklch(0.93 0.008 95); border-radius: 6px; background: white" />
+                          <input value="{{ row.unit }}" onChange="{{ row.setUnit }}" placeholder="mg/dl" disabled="{{ row.locked }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 7px 9px; border: 1px solid oklch(0.93 0.008 95); border-radius: 6px; background: {{ row.fieldBg }}" />
+                          <input value="{{ row.m }}" onChange="{{ row.setM }}" placeholder="13 - 18" disabled="{{ row.locked }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 7px 9px; border: 1px solid oklch(0.93 0.008 95); border-radius: 6px; background: {{ row.fieldBg }}" />
+                          <input value="{{ row.f }}" onChange="{{ row.setF }}" placeholder="12 - 16" disabled="{{ row.locked }}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 7px 9px; border: 1px solid oklch(0.93 0.008 95); border-radius: 6px; background: {{ row.fieldBg }}" />
+                          <div style="display: flex; gap: 4px">
+                            <sc-for list="{{ row.types }}" as="t" hint-placeholder-count="3">
+                              <div onClick="{{ t.pick }}" style="font-size: 11px; font-weight: 600; padding: 5px 8px; border-radius: 5px; cursor: pointer; border: 1px solid {{ t.border }}; background: {{ t.bg }}; color: {{ t.fg }}">{{ t.label }}</div>
+                            </sc-for>
+                          </div>
+                          <div onClick="{{ row.remove }}" style="cursor: pointer; color: oklch(0.6 0.012 240); font-size: 16px; line-height: 1; text-align: center">×</div>
+                        </div>
+                      </sc-for>
+                      <div onClick="{{ addRow }}" style="padding: 12px 16px; font-size: 12.5px; font-weight: 600; color: oklch(0.44 0.075 195); cursor: pointer" style-hover="background: oklch(0.98 0.012 195)">+ Add analyte row</div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 22px; margin-top: 16px; font-size: 12px; color: oklch(0.5 0.012 240); line-height: 1.65; flex-wrap: wrap">
+                    <div style="max-width: 290px"><b style="color: oklch(0.28 0.015 240)">Value</b> — a normal result line.</div>
+                    <div style="max-width: 290px"><b style="color: oklch(0.28 0.015 240)">Sub</b> — indented under the heading above it, like DLC differentials.</div>
+                    <div style="max-width: 290px"><b style="color: oklch(0.28 0.015 240)">Heading</b> — a label with no value, printed only when a sub-row below it is used.</div>
+                  </div>
+                </div>
+
+                <div style="width: 306px; flex: none; background: white; border-left: 1px solid oklch(0.9 0.008 95); padding: 20px 18px; display: flex; flex-direction: column; gap: 13px; overflow: auto">
+                  <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Print preview</div>
+                  <div style="border: 1px solid oklch(0.92 0.008 95); border-radius: 8px; padding: 14px 15px">
+                    <div style="font-family: 'Newsreader', Georgia, serif; font-size: 14px; font-weight: 700; text-decoration: underline; margin-bottom: 5px">{{ draftTitle }}</div>
+                    <sc-for list="{{ draftPreview }}" as="row" hint-placeholder-count="4">
+                      <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr; font-size: 11.5px; line-height: 1.85">
+                        <div style="padding-left: {{ row.indent }}; font-weight: {{ row.weight }}">{{ row.name }}</div>
+                        <div style="text-align: center; font-family: 'JetBrains Mono', monospace; color: oklch(0.68 0.012 240)">{{ row.dash }}</div>
+                        <div style="text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: oklch(0.5 0.012 240)">{{ row.ref }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="font-size: 12px; color: oklch(0.48 0.012 240); line-height: 1.8; border-top: 1px solid oklch(0.94 0.008 95); padding-top: 12px">
+                    <div style="display: flex; justify-content: space-between"><span>Rows</span><span style="font-family: 'JetBrains Mono', monospace">{{ draftCount }}</span></div>
+                    <div style="display: flex; justify-content: space-between"><span>Sex-specific ranges</span><span style="font-family: 'JetBrains Mono', monospace">{{ draftSexCount }}</span></div>
+                  </div>
+                  <div style="font-size: 11.5px; color: oklch(0.55 0.012 240); line-height: 1.6; background: oklch(0.97 0.006 95); border-radius: 7px; padding: 11px">Ranges accept <b>13 - 18</b>, <b>&lt; 140</b> or plain text like <b>Absent</b>. Numeric ranges drive the automatic high / low arrows.</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ notDraft }}" hint-placeholder-val="{{ true }}">
+            <div style="flex: 1; min-width: 0; overflow: auto; padding: 22px 26px 34px">
+              <div style="display: flex; align-items: flex-end; gap: 14px">
+                <div style="max-width: 640px">
+                  <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.58 0.012 240); font-weight: 600">Setup · Test templates</div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap">
+                    <select value="{{ tplValue }}" onChange="{{ pickTpl }}" style="font-size: 14px; font-weight: 600; padding: 9px 30px 9px 11px; border: 1px solid oklch(0.9 0.008 95); border-radius: 7px; background: white; max-width: 340px">
+                      <sc-for list="{{ tplOptions }}" as="o" hint-placeholder-count="8">
+                        <option value="{{ o.id }}">{{ o.name }}</option>
+                      </sc-for>
+                    </select>
+                    <div onClick="{{ openDraft }}" style="border: 1px dashed oklch(0.82 0.05 195); color: oklch(0.4 0.075 195); background: white; padding: 9px 13px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="background: oklch(0.97 0.012 195)">+ New template</div>
+                  </div>
+                </div>
+                <div style="flex: 1"></div>
+                <sc-if value="{{ confirmDelete }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 10px; background: oklch(0.97 0.03 30); border: 1px solid oklch(0.88 0.06 30); border-radius: 8px; padding: 8px 10px 8px 14px">
+                    <div style="font-size: 12.5px; font-weight: 500; color: oklch(0.42 0.13 30); max-width: 360px; line-height: 1.5">Delete “{{ editing.name }}” from the catalog?{{ deleteUsage }}</div>
+                    <div onClick="{{ cancelDelete }}" style="border: 1px solid oklch(0.88 0.008 95); background: white; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer">Keep</div>
+                    <div onClick="{{ doDelete }}" style="background: oklch(0.5 0.15 30); color: white; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer">Delete</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ noConfirmDelete }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; gap: 10px">
+                    <div onClick="{{ askDelete }}" style="border: 1px solid oklch(0.9 0.03 30); background: white; padding: 9px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: oklch(0.5 0.14 30); cursor: pointer" style-hover="background: oklch(0.98 0.02 30)">Delete</div>
+                    <div onClick="{{ editTemplate }}" style="background: oklch(0.44 0.075 195); color: white; padding: 9px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="filter: brightness(1.12)">Edit template</div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="background: white; border: 1px solid oklch(0.9 0.008 95); border-radius: 10px; overflow-x: auto; margin-top: 18px">
+                <div style="display: grid; grid-template-columns: minmax(150px, 1.4fr) 96px minmax(104px, 1fr) minmax(104px, 1fr); gap: 14px; min-width: 600px; padding: 9px 18px; background: oklch(0.98 0.006 95); border-bottom: 1px solid oklch(0.94 0.008 95); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.55 0.012 240); font-weight: 600">
+                  <div>Analyte</div><div>Unit</div><div>Range · male</div><div>Range · female</div>
+                </div>
+                <sc-for list="{{ editing.rows }}" as="row" hint-placeholder-count="8">
+                  <div style="display: grid; grid-template-columns: minmax(150px, 1.4fr) 96px minmax(104px, 1fr) minmax(104px, 1fr); gap: 14px; min-width: 600px; padding: 8px 18px; align-items: center; border-bottom: 1px solid oklch(0.965 0.006 95); font-size: 13px; background: {{ row.rowBg }}">
+                    <div style="padding-left: {{ row.indent }}; font-weight: {{ row.weight }}">{{ row.name }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.55 0.012 240)">{{ row.unit }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ row.refM }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: oklch(0.5 0.012 240)">{{ row.refF }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="font-size: 11.5px; color: oklch(0.6 0.012 240); margin-top: 12px">Editing a template changes future orders only. Reports already printed keep the ranges they were printed with.</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const CATALOG = [
+  { id: 'cbc', name: 'Complete Blood Count (CBC)', heading: 'HAEMATOLOGY REPORT', rows: [
+    { name: 'Hb', unit: 'gm%', m: '13 - 18', f: '12 - 16', bold: true },
+    { name: 'TLC', unit: '/cumm', m: '4,000 - 11,000', f: '4,000 - 11,000', bold: true },
+    { name: 'DLC', head: true },
+    { name: 'Neutrophil', unit: '%', m: '40 - 70', f: '40 - 70', sub: true },
+    { name: 'Lymphocyte', unit: '%', m: '20 - 45', f: '20 - 45', sub: true },
+    { name: 'Monocyte', unit: '%', m: '2 - 10', f: '2 - 10', sub: true },
+    { name: 'Eosinophil', unit: '%', m: '1 - 6', f: '1 - 6', sub: true },
+    { name: 'Basophil', unit: '%', m: '0 - 2', f: '0 - 2', sub: true },
+    { name: 'PCV', unit: '%', m: '40 - 52', f: '37 - 47', bold: true },
+    { name: 'MCV', unit: 'fl', m: '76 - 98', f: '76 - 98' },
+    { name: 'MCH', unit: 'pg', m: '26 - 36', f: '26 - 36' },
+    { name: 'MCHC', unit: 'g/dl', m: '31 - 37', f: '31 - 37' },
+    { name: 'RBC Count', unit: 'million/cumm', m: '4.5 - 5.5', f: '4.5 - 5.5' },
+    { name: 'Platelets Count', unit: 'Lakh/cumm', m: '1.5 - 4.0', f: '1.5 - 4.0' },
+    { name: 'RDW-CV', unit: '%', m: '10 - 15', f: '10 - 15' }
+  ]},
+  { id: 'sugar', name: 'Blood Sugar', heading: 'BIOCHEMISTRY REPORT', rows: [
+    { name: 'Fasting', unit: 'mg/dl', m: '65 - 110', f: '65 - 110' },
+    { name: 'PP', unit: 'mg/dl', m: '< 140', f: '< 140' },
+    { name: 'Random', unit: 'mg/dl', m: '< 120', f: '< 120' }
+  ]},
+  { id: 'rft', name: 'Renal Function Test', heading: 'BIOCHEMISTRY REPORT', rows: [
+    { name: 'Urea', unit: 'mg/dl', m: '15 - 45', f: '15 - 45' },
+    { name: 'Creatinine', unit: 'mg/dl', m: '0.6 - 1.4', f: '0.5 - 1.2' },
+    { name: 'Uric Acid', unit: 'mg/dl', m: '3.5 - 7.2', f: '2.6 - 6.0' },
+    { name: 'Sodium', unit: 'mEq/L', m: '135 - 145', f: '135 - 145' },
+    { name: 'Potassium', unit: 'mEq/L', m: '3.5 - 5.1', f: '3.5 - 5.1' }
+  ]},
+  { id: 'lft', name: 'Liver Function Test', heading: 'BIOCHEMISTRY REPORT', rows: [
+    { name: 'Bilirubin Total', unit: 'mg/dl', m: '0.2 - 1.2', f: '0.2 - 1.2' },
+    { name: 'Bilirubin Direct', unit: 'mg/dl', m: '0.0 - 0.3', f: '0.0 - 0.3' },
+    { name: 'SGPT (ALT)', unit: 'U/L', m: '< 45', f: '< 34' },
+    { name: 'SGOT (AST)', unit: 'U/L', m: '< 40', f: '< 32' },
+    { name: 'Alkaline Phosphatase', unit: 'U/L', m: '40 - 130', f: '35 - 105' },
+    { name: 'Total Protein', unit: 'g/dl', m: '6.4 - 8.3', f: '6.4 - 8.3' }
+  ]},
+  { id: 'lipid', name: 'Lipid Profile', heading: 'BIOCHEMISTRY REPORT', rows: [
+    { name: 'Total Cholesterol', unit: 'mg/dl', m: '< 200', f: '< 200' },
+    { name: 'Triglycerides', unit: 'mg/dl', m: '< 150', f: '< 150' },
+    { name: 'HDL', unit: 'mg/dl', m: '40 - 60', f: '50 - 60' },
+    { name: 'LDL', unit: 'mg/dl', m: '< 100', f: '< 100' }
+  ]},
+  { id: 'urine', name: 'Urine Routine Examination', heading: 'CLINICAL PATHOLOGY REPORT', rows: [
+    { name: 'Colour', unit: '', m: 'Pale yellow', f: 'Pale yellow' },
+    { name: 'Albumin', unit: '', m: 'Absent', f: 'Absent' },
+    { name: 'Sugar', unit: '', m: 'Absent', f: 'Absent' },
+    { name: 'Pus Cells', unit: '/hpf', m: '0 - 5', f: '0 - 5' },
+    { name: 'RBC', unit: '/hpf', m: 'Nil', f: 'Nil' }
+  ]},
+  { id: 'widal', name: 'Widal Test', heading: 'SEROLOGY REPORT', rows: [
+    { name: 'S. Typhi O', unit: 'titre', m: '< 1:80', f: '< 1:80' },
+    { name: 'S. Typhi H', unit: 'titre', m: '< 1:160', f: '< 1:160' }
+  ]},
+  { id: 'tft', name: 'Thyroid Profile', heading: 'HORMONE ASSAY', rows: [
+    { name: 'T3', unit: 'ng/dl', m: '80 - 200', f: '80 - 200' },
+    { name: 'T4', unit: 'µg/dl', m: '5.1 - 14.1', f: '5.1 - 14.1' },
+    { name: 'TSH', unit: 'µIU/ml', m: '0.27 - 4.2', f: '0.27 - 4.2' }
+  ]}
+];
+
+const PATIENTS = [
+  { id: 'P-1042', name: 'Sunita Devi', age: '50', sex: 'F', mobile: '9845112207', address: 'Birgunj-8', ref: 'Dr. Deepak Kumar Kushwaha' },
+  { id: 'P-1043', name: 'Ram Bahadur Thapa', age: '62', sex: 'M', mobile: '9812445690', address: 'Birgunj-4', ref: 'Dr. S. Chaudhary' },
+  { id: 'P-1044', name: 'Anita Kumari', age: '27', sex: 'F', mobile: '9807731145', address: 'Parsa', ref: 'Dr. Deepak Kumar Kushwaha' },
+  { id: 'P-1045', name: 'Bikash Shrestha', age: '41', sex: 'M', mobile: '9741200983', address: 'Birgunj-12', ref: 'Self' },
+  { id: 'P-1046', name: 'Gita Sah', age: '35', sex: 'F', mobile: '9855009274', address: 'Birgunj-8', ref: 'Dr. M. Yadav' },
+  { id: 'P-1047', name: 'Mohan Yadav', age: '58', sex: 'M', mobile: '9819337561', address: 'Bara', ref: 'Dr. S. Chaudhary' }
+];
+
+const REPORTS = [
+  { id: 'R-26-0391', pid: 'P-1042', bill: '39530', date: '25/08/2026', today: true, tests: ['cbc', 'sugar'], included: { sugar: ['PP'] }, status: 'Results entered', values: { cbc: { Hb: '9.20', TLC: '16300', Neutrophil: '70', Lymphocyte: '22', Monocyte: '7', Eosinophil: '1', Basophil: '0', PCV: '27.00', MCV: '74.00', MCH: '26.00', MCHC: '34.07', 'RBC Count': '3.59', 'Platelets Count': '2.45', 'RDW-CV': '16.8' }, sugar: { PP: '174.00' } } },
+  { id: 'R-26-0392', pid: 'P-1043', bill: '39531', date: '25/08/2026', today: true, tests: ['rft', 'lipid'], included: {}, status: 'Ordered', values: {} },
+  { id: 'R-26-0393', pid: 'P-1044', bill: '39532', date: '25/08/2026', today: true, tests: ['cbc', 'urine', 'widal'], included: { cbc: ['Hb', 'TLC', 'Neutrophil', 'Lymphocyte', 'Monocyte', 'Eosinophil', 'Basophil', 'Platelets Count'] }, status: 'Ordered', values: {} },
+  { id: 'R-26-0390', pid: 'P-1045', bill: '39528', date: '24/08/2026', tests: ['lft', 'sugar'], included: { sugar: ['Random'] }, status: 'Printed', values: { lft: { 'Bilirubin Total': '0.9', 'SGPT (ALT)': '58', 'SGOT (AST)': '44' }, sugar: { Random: '178.00' } } },
+  { id: 'R-26-0389', pid: 'P-1047', bill: '39526', date: '24/08/2026', tests: ['cbc', 'rft'], included: { cbc: ['Hb', 'TLC', 'PCV', 'Platelets Count'] }, status: 'Printed', values: { cbc: { Hb: '13.4', TLC: '8200', PCV: '44.00', 'Platelets Count': '2.80' }, rft: { Urea: '38', Creatinine: '1.1' } } },
+  { id: 'R-26-0386', pid: 'P-1046', bill: '39527', date: '19/08/2026', tests: ['tft'], included: {}, status: 'Verified', values: { tft: { T3: '110', T4: '9.2', TSH: '5.80' } } },
+  { id: 'R-26-0384', pid: 'P-1044', bill: '39498', date: '02/07/2026', tests: ['cbc'], included: { cbc: ['Hb', 'TLC'] }, status: 'Printed', values: { cbc: { Hb: '11.8', TLC: '7400' } } },
+  { id: 'R-26-0377', pid: 'P-1042', bill: '36290', date: '23/04/2026', tests: ['cbc', 'sugar'], included: { cbc: ['Hb', 'TLC', 'Neutrophil', 'Lymphocyte'], sugar: ['Fasting', 'PP'] }, status: 'Printed', values: { cbc: { Hb: '9.60', TLC: '15000', Neutrophil: '68', Lymphocyte: '24' }, sugar: { Fasting: '182.00', PP: '194.00' } } }
+];
+
+const RETIRED = {};
+const ACCENT = 'oklch(0.44 0.075 195)';
+const HIGH = 'oklch(0.5 0.15 32)';
+const LOW = 'oklch(0.44 0.11 250)';
+const STATUS = {
+  Ordered: ['oklch(0.96 0.04 78)', 'oklch(0.45 0.11 68)'],
+  'Results entered': ['oklch(0.95 0.03 195)', 'oklch(0.38 0.075 195)'],
+  Verified: ['oklch(0.95 0.035 250)', 'oklch(0.4 0.1 252)'],
+  Printed: ['oklch(0.96 0.03 150)', 'oklch(0.39 0.09 152)']
+};
+
+class Component extends DCLogic {
+  state = {
+    screen: 'dash',
+    patients: PATIENTS.slice(),
+    reports: REPORTS.slice(),
+    activeReport: 'R-26-0391',
+    patient: { ...PATIENTS[0], bill: '39530' },
+    selected: ['cbc', 'sugar'],
+    included: { sugar: ['PP'] },
+    values: JSON.parse(JSON.stringify(REPORTS[0].values)),
+    entryTab: 'cbc',
+    dq: '', rq: '', q: '',
+    dashFilter: 'All', statusFilter: 'All',
+    printHeader: true, arrows: true, ranges: true,
+    reg: { name: '', age: '', sex: 'F', mobile: '', address: '', ref: '' },
+    tpl: 'cbc', draft: null, confirmDel: false,
+    banner: ''
+  };
+
+  panel(id) { return CATALOG.find(c => c.id === id); }
+  refOf(row) { return this.state.patient.sex === 'M' ? row.m : row.f; }
+  rowsOf(pl) {
+    const inc = this.state.included[pl.id];
+    if (!inc) return pl.rows;
+    return pl.rows.filter(r => {
+      if (!r.head) return inc.includes(r.name);
+      const i = pl.rows.indexOf(r);
+      for (let k = i + 1; k < pl.rows.length && pl.rows[k].sub; k++) if (inc.includes(pl.rows[k].name)) return true;
+      return false;
+    });
+  }
+  limits(ref) {
+    if (!ref) return null;
+    const lt = String(ref).match(/^<\s*([\d.,]+)$/);
+    if (lt) return { hi: parseFloat(lt[1].replace(/,/g, '')) };
+    const rg = String(ref).match(/^([\d.,]+)\s*-\s*([\d.,]+)$/);
+    if (rg) return { lo: parseFloat(rg[1].replace(/,/g, '')), hi: parseFloat(rg[2].replace(/,/g, '')) };
+    return null;
+  }
+  flagOf(row, raw) {
+    if (row.head || raw === undefined || raw === '') return '';
+    const n = parseFloat(String(raw).replace(/,/g, ''));
+    const l = this.limits(this.refOf(row));
+    if (!l || isNaN(n)) return '';
+    if (l.hi !== undefined && n > l.hi) return 'H';
+    if (l.lo !== undefined && n < l.lo) return 'L';
+    return '';
+  }
+  fmt(v) {
+    const n = parseFloat(String(v).replace(/,/g, ''));
+    return isNaN(n) ? v : (n >= 1000 ? n.toLocaleString('en-US') : v);
+  }
+  filled(id) {
+    const pl = this.panel(id);
+    const rows = this.rowsOf(pl).filter(r => !r.head);
+    const v = this.state.values[id] || {};
+    return [rows.filter(r => v[r.name]).length, rows.length];
+  }
+  go(screen) { return () => this.setState({ screen, banner: '' }); }
+  openReport(rep, screen) {
+    const pat = this.state.patients.find(p => p.id === rep.pid) || this.state.patients[0];
+    this.setState({
+      screen, activeReport: rep.id, patient: { ...pat, bill: rep.bill },
+      selected: rep.tests.slice(), included: { ...rep.included },
+      values: JSON.parse(JSON.stringify(rep.values || {})),
+      entryTab: rep.tests[0], banner: ''
+    });
+  }
+  decorate(rep) {
+    const pat = this.state.patients.find(x => x.id === rep.pid) || {};
+    const names = rep.tests
+      .map(t => {
+        const pl = this.panel(t);
+        if (pl) return pl.name.replace(/ \(.*\)$/, '');
+        return (RETIRED[t] || 'Removed test').replace(/ \(.*\)$/, '') + ' (deleted)';
+      })
+      .join(' · ');
+    const act = rep.status === 'Ordered' ? { label: 'Enter', screen: 'entry' }
+      : rep.status === 'Results entered' ? { label: 'Preview', screen: 'print' }
+      : { label: 'Open', screen: 'print' };
+    return {
+      id: rep.id, date: rep.date, pid: rep.pid, name: pat.name, mobile: pat.mobile,
+      ageSex: pat.age + 'Y/' + pat.sex, tests: names, status: rep.status,
+      sbg: STATUS[rep.status][0], sfg: STATUS[rep.status][1],
+      rail: STATUS[rep.status][1], action: act.label,
+      open: () => this.openReport(rep, act.screen)
+    };
+  }
+  setReg(k) { return e => { const v = e.target.value; this.setState(s => ({ reg: { ...s.reg, [k]: v } })); }; }
+  blankRow() { return { name: '', unit: '', m: '', f: '', type: 'value' }; }
+  patchDraftRow(i, patch) {
+    this.setState(s => ({ draft: { ...s.draft, rows: s.draft.rows.map((r, k) => k === i ? { ...r, ...patch } : r) } }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const p = s.patient;
+    const dec = r => this.decorate(r);
+    const todays = s.reports.filter(r => r.today);
+    const pending = s.reports.filter(r => r.status === 'Ordered').length;
+    const entered = s.reports.filter(r => r.status === 'Results entered').length;
+    const printed = todays.filter(r => r.status === 'Printed').length;
+
+    const dq = s.dq.trim().toLowerCase();
+    let dashAll = todays.map(dec);
+    if (dq) dashAll = dashAll.filter(r => (r.name + ' ' + r.pid + ' ' + r.mobile + ' ' + r.id).toLowerCase().includes(dq));
+    const dashRows = s.dashFilter === 'All' ? dashAll : dashAll.filter(r => (s.dashFilter === 'Pending' ? r.status === 'Ordered' : r.status !== 'Ordered'));
+
+    const rq = s.rq.trim().toLowerCase();
+    const repList = s.reports
+      .filter(r => {
+        if (!rq) return true;
+        const pat = s.patients.find(x => x.id === r.pid) || {};
+        return [r.id, r.pid, r.bill, pat.name, pat.mobile].some(v => String(v).toLowerCase().includes(rq));
+      })
+      .filter(r => s.statusFilter === 'All' || r.status === s.statusFilter);
+
+    const activePanels = s.selected.map(id => this.panel(id)).filter(Boolean);
+    const entryPanel = this.panel(s.entryTab) || activePanels[0] || CATALOG[0];
+    const entryVals = s.values[entryPanel.id] || {};
+
+    const abnormal = [];
+    activePanels.forEach(pl => {
+      this.rowsOf(pl).forEach(r => {
+        const v = (s.values[pl.id] || {})[r.name];
+        const fl = this.flagOf(r, v);
+        if (fl) abnormal.push({
+          name: r.name, value: this.fmt(v), ref: this.refOf(r),
+          arrow: fl === 'H' ? '↑' : '↓', fg: fl === 'H' ? HIGH : LOW
+        });
+      });
+    });
+
+    const q = s.q.trim().toLowerCase();
+    const tplPanel = this.panel(s.tpl) || CATALOG[0];
+    const draftRows = s.draft ? s.draft.rows : [];
+
+    const totalRows = s.selected.reduce((n, id) => n + this.rowsOf(this.panel(id)).filter(r => !r.head).length, 0);
+
+    return {
+      shellMin: s.screen === 'templates' ? (s.draft ? '1400px' : '1220px')
+        : s.screen === 'reports' ? '1300px' : '1220px',
+      todayAD: '25/08/2026', todayBS: '2083-05-09',
+      p: { ...p }, activeReport: s.activeReport,
+      sexWord: p.sex === 'M' ? 'Male' : 'Female',
+      banner: s.banner, hasBanner: !!s.banner, clearBanner: () => this.setState({ banner: '' }),
+      isDash: s.screen === 'dash', isNew: s.screen === 'new', isEntry: s.screen === 'entry',
+      isPrint: s.screen === 'print', isReports: s.screen === 'reports', isTemplates: s.screen === 'templates',
+      goNew: () => this.setState({ screen: 'new', banner: '' }),
+      goPrint: this.go('print'),
+
+      nav: [
+        { id: 'dash', label: 'Dashboard', count: todays.length },
+        { id: 'entry', label: 'Result entry', count: pending + entered },
+        { id: 'print', label: 'Print preview', count: '' },
+        { id: 'reports', label: 'All reports', count: s.reports.length },
+        { id: 'templates', label: 'Test templates', count: CATALOG.length }
+      ].map(n => {
+        const on = s.screen === n.id;
+        return {
+          label: n.label, count: n.count, go: this.go(n.id),
+          bg: on ? 'oklch(0.96 0.022 195)' : 'transparent',
+          fg: on ? ACCENT : 'oklch(0.32 0.012 240)',
+          mark: on ? ACCENT : 'transparent',
+          countFg: on ? ACCENT : 'oklch(0.62 0.012 240)'
+        };
+      }),
+
+      stats: [
+        { label: 'Registered today', value: todays.length, note: '', color: 'oklch(0.25 0.015 240)' },
+        { label: 'Awaiting results', value: pending, note: 'in lab', color: 'oklch(0.5 0.13 68)' },
+        { label: 'Ready to verify', value: entered, note: '', color: ACCENT },
+        { label: 'Printed today', value: printed, note: '', color: 'oklch(0.39 0.09 152)' }
+      ],
+      dq: s.dq, setDq: e => this.setState({ dq: e.target.value }),
+      dCount: dq ? dashAll.length + '/' + todays.length : todays.length + '',
+      dashFilters: ['All', 'Pending', 'Done'].map(f => {
+        const on = s.dashFilter === f;
+        return { label: f, pick: () => this.setState({ dashFilter: f }), bg: on ? 'oklch(0.95 0.025 195)' : 'oklch(0.97 0.006 95)', fg: on ? ACCENT : 'oklch(0.5 0.012 240)' };
+      }),
+      dashRows, dashEmpty: dashRows.length === 0,
+      abnormal,
+      shortcuts: [
+        { key: 'N', label: 'New report', go: () => this.setState({ screen: 'new' }) },
+        { key: 'E', label: 'Result entry', go: this.go('entry') },
+        { key: 'P', label: 'Print preview', go: this.go('print') },
+        { key: 'T', label: 'Test templates', go: this.go('templates') }
+      ],
+
+      regFields: [
+        { label: 'Full name', ph: 'Sunita Devi', value: s.reg.name, set: this.setReg('name'), font: "'Instrument Sans', sans-serif" },
+        { label: 'Age', ph: '50', value: s.reg.age, set: this.setReg('age'), font: "'JetBrains Mono', monospace" },
+        { label: 'Mobile number', ph: '98XXXXXXXX', value: s.reg.mobile, set: this.setReg('mobile'), font: "'JetBrains Mono', monospace" },
+        { label: 'Address', ph: 'Birgunj-8', value: s.reg.address, set: this.setReg('address'), font: "'Instrument Sans', sans-serif" },
+        { label: 'Referred by', ph: 'Dr. …', value: s.reg.ref, set: this.setReg('ref'), font: "'Instrument Sans', sans-serif" }
+      ],
+      regSex: s.reg.sex, setRegSex: e => { const v = e.target.value; this.setState(st => ({ reg: { ...st.reg, sex: v } })); },
+      clearReg: () => this.setState({ reg: { name: '', age: '', sex: 'F', mobile: '', address: '', ref: '' } }),
+      nextPid: 'P-' + (1048 + s.patients.length - PATIENTS.length),
+
+      q: s.q, setQ: e => this.setState({ q: e.target.value }),
+      cards: CATALOG.filter(c => !q || c.name.toLowerCase().includes(q) || c.rows.some(r => r.name.toLowerCase().includes(q))).map(c => {
+        const on = s.selected.includes(c.id);
+        const inc = s.included[c.id] || c.rows.filter(r => !r.head).map(r => r.name);
+        return {
+          name: c.name, on,
+          count: on ? inc.length + '/' + c.rows.filter(r => !r.head).length : c.rows.filter(r => !r.head).length + '',
+          preview: c.rows.filter(r => !r.head).slice(0, 5).map(r => r.name).join(', ') + (c.rows.length > 5 ? '…' : ''),
+          cardBg: on ? 'oklch(0.985 0.012 195)' : 'white',
+          border: on ? 'oklch(0.82 0.05 195)' : 'oklch(0.9 0.008 95)',
+          boxBorder: on ? ACCENT : 'oklch(0.82 0.008 95)',
+          boxBg: on ? ACCENT : 'white', tick: on ? '✓' : '',
+          toggle: () => this.setState(st => ({ selected: on ? st.selected.filter(x => x !== c.id) : [...st.selected, c.id] })),
+          all: () => this.setState(st => { const n = { ...st.included }; delete n[c.id]; return { included: n }; }),
+          rows: c.rows.filter(r => !r.head).map(r => {
+            const rOn = inc.includes(r.name);
+            return {
+              name: r.name,
+              toggle: () => this.setState(st => {
+                const cur = st.included[c.id] || c.rows.filter(x => !x.head).map(x => x.name);
+                return { included: { ...st.included, [c.id]: rOn ? cur.filter(x => x !== r.name) : [...cur, r.name] } };
+              }),
+              border: rOn ? 'oklch(0.8 0.05 195)' : 'oklch(0.91 0.008 95)',
+              bg: rOn ? 'oklch(0.95 0.025 195)' : 'white',
+              fg: rOn ? 'oklch(0.36 0.075 195)' : 'oklch(0.5 0.012 240)'
+            };
+          })
+        };
+      }),
+      summaryName: s.reg.name || p.name || 'No patient yet',
+      summaryLines: [
+        { k: 'Patient', v: s.reg.name ? 'new' : (p.id || '—'), color: 'oklch(0.35 0.012 240)' },
+        { k: 'Tests', v: s.selected.length, color: 'oklch(0.35 0.012 240)' },
+        { k: 'Printed rows', v: totalRows, color: 'oklch(0.35 0.012 240)' },
+        { k: 'Page fit', v: totalRows > 26 ? '2 pages' : '1 page', color: totalRows > 26 ? 'oklch(0.5 0.13 68)' : 'oklch(0.39 0.09 152)' }
+      ],
+      selectedNames: s.selected.map(id => (this.panel(id) || {}).name).filter(Boolean),
+      saveOrder: () => {
+        const name = s.reg.name || p.name;
+        if (!name || !s.selected.length) {
+          this.setState({ banner: 'Enter a patient name and pick at least one test.' });
+          return;
+        }
+        const num = 394 + (s.reports.length - REPORTS.length);
+        const id = 'R-26-0' + num;
+        let pat = p;
+        if (s.reg.name) {
+          pat = { id: this.state.patients.length ? 'P-' + (1048 + s.patients.length - PATIENTS.length) : 'P-1048', name: s.reg.name, age: s.reg.age, sex: s.reg.sex, mobile: s.reg.mobile, address: s.reg.address, ref: s.reg.ref, bill: '' };
+        }
+        this.setState(st => ({
+          patients: s.reg.name ? [pat, ...st.patients] : st.patients,
+          patient: { ...pat },
+          reports: [{ id, pid: pat.id, bill: pat.bill || '—', date: '25/08/2026', today: true, tests: st.selected.slice(), included: { ...st.included }, status: 'Ordered', values: {} }, ...st.reports],
+          activeReport: id, screen: 'dash', values: {},
+          reg: { name: '', age: '', sex: 'F', mobile: '', address: '', ref: '' },
+          banner: 'Order ' + id + ' saved for ' + pat.name + '. It is waiting in Result entry.'
+        }));
+      },
+
+      panelTabs: activePanels.map(pl => {
+        const [d, t] = this.filled(pl.id);
+        const on = pl.id === entryPanel.id;
+        return {
+          label: pl.name.replace(/ \(.*\)$/, ''), done: d + '/' + t,
+          pct: t ? Math.round(d / t * 100) + '%' : '0%',
+          pick: () => this.setState({ entryTab: pl.id }),
+          bg: on ? 'oklch(0.96 0.022 195)' : 'white',
+          border: on ? 'oklch(0.84 0.05 195)' : 'oklch(0.93 0.008 95)'
+        };
+      }),
+      entryRows: this.rowsOf(entryPanel).map(r => {
+        const v = entryVals[r.name] || '';
+        const fl = this.flagOf(r, v);
+        return {
+          name: r.name, input: !r.head, value: v,
+          unit: r.head ? '' : r.unit, ref: r.head ? '' : this.refOf(r),
+          indent: r.sub ? '16px' : '0px',
+          weight: r.bold || r.head ? '600' : '400',
+          nameFg: r.head ? 'oklch(0.5 0.012 240)' : 'oklch(0.25 0.015 240)',
+          rowBg: r.head ? 'oklch(0.98 0.006 95)' : 'white',
+          set: e => { const val = e.target.value; this.setState(st => ({ values: { ...st.values, [entryPanel.id]: { ...(st.values[entryPanel.id] || {}), [r.name]: val } } })); },
+          flag: fl === 'H' ? '↑' : fl === 'L' ? '↓' : '',
+          flagFg: fl === 'H' ? HIGH : LOW,
+          inBorder: fl ? 'oklch(0.84 0.06 34)' : (v ? 'oklch(0.88 0.008 95)' : 'oklch(0.93 0.008 95)'),
+          inBg: fl ? 'oklch(0.98 0.02 40)' : 'white'
+        };
+      }),
+      saveResults: () => this.setState(st => ({
+        reports: st.reports.map(r => r.id === st.activeReport ? { ...r, values: JSON.parse(JSON.stringify(st.values)), status: r.status === 'Ordered' ? 'Results entered' : r.status } : r),
+        screen: 'print',
+        banner: 'Results saved for ' + st.activeReport + '.'
+      })),
+
+      printHeader: s.printHeader,
+      printToggles: [
+        { key: 'printHeader', label: 'Letterhead' },
+        { key: 'arrows', label: 'Arrows' },
+        { key: 'ranges', label: 'Ref. ranges' }
+      ].map(t => {
+        const on = s[t.key];
+        return {
+          label: t.label, tick: on ? '✓' : '○',
+          flip: () => this.setState(st => ({ [t.key]: !st[t.key] })),
+          border: on ? 'oklch(0.84 0.05 195)' : 'oklch(0.9 0.008 95)',
+          bg: on ? 'oklch(0.96 0.022 195)' : 'white',
+          fg: on ? ACCENT : 'oklch(0.5 0.012 240)'
+        };
+      }),
+      printPanels: activePanels.map(pl => ({
+        heading: pl.name.toUpperCase(),
+        rows: this.rowsOf(pl).filter(r => r.head || (s.values[pl.id] || {})[r.name]).map(r => {
+          const v = (s.values[pl.id] || {})[r.name] || '';
+          const fl = this.flagOf(r, v);
+          return {
+            name: r.name, value: r.head ? '' : this.fmt(v),
+            unit: r.head ? '' : r.unit,
+            ref: r.head || !s.ranges ? '' : this.refOf(r),
+            indent: r.sub ? '18px' : '0px',
+            weight: r.bold || r.head ? '700' : '400',
+            arrow: s.arrows && fl ? (fl === 'H' ? '↑' : '↓') : ''
+          };
+        })
+      })),
+      printReport: () => this.setState(st => ({
+        reports: st.reports.map(r => r.id === st.activeReport ? { ...r, status: 'Printed' } : r),
+        screen: 'dash',
+        banner: st.activeReport + ' verified and sent to the printer.'
+      })),
+
+      rq: s.rq, setRq: e => this.setState({ rq: e.target.value }),
+      statusChips: ['All', 'Ordered', 'Results entered', 'Verified', 'Printed'].map(f => {
+        const on = s.statusFilter === f;
+        return {
+          label: f, n: f === 'All' ? s.reports.length : s.reports.filter(r => r.status === f).length,
+          pick: () => this.setState({ statusFilter: f }),
+          border: on ? 'oklch(0.84 0.05 195)' : 'oklch(0.9 0.008 95)',
+          bg: on ? 'oklch(0.96 0.022 195)' : 'white',
+          fg: on ? ACCENT : 'oklch(0.5 0.012 240)'
+        };
+      }),
+      reportRows: repList.map(dec), reportsEmpty: repList.length === 0,
+
+      tplOptions: CATALOG.map(c => ({ id: c.id, name: c.name })),
+      tplValue: tplPanel.id,
+      pickTpl: e => { const v = e.target.value; this.setState({ tpl: v, draft: null, confirmDel: false }); },
+
+      isDraft: !!s.draft, notDraft: !s.draft,
+      draftBorder: s.draft ? ACCENT : 'oklch(0.85 0.008 95)',
+      draftFg: s.draft ? ACCENT : 'oklch(0.48 0.012 240)',
+      openDraft: () => this.setState({ draft: { id: null, name: '', rows: [this.blankRow(), this.blankRow(), this.blankRow()] }, confirmDel: false }),
+      editTemplate: () => this.setState({
+        confirmDel: false,
+        draft: {
+          id: tplPanel.id, name: tplPanel.name,
+          rows: tplPanel.rows.map(r => ({
+            name: r.name, unit: r.unit || '', m: r.m || '', f: r.f || '',
+            type: r.head ? 'head' : r.sub ? 'sub' : 'value'
+          }))
+        }
+      }),
+      confirmDelete: !!s.confirmDel, noConfirmDelete: !s.confirmDel,
+      askDelete: () => this.setState({ confirmDel: true }),
+      cancelDelete: () => this.setState({ confirmDel: false }),
+      deleteUsage: (() => {
+        const n = s.reports.filter(r => r.tests.includes(tplPanel.id)).length;
+        return n ? ' Used by ' + n + ' existing report' + (n === 1 ? '' : 's') + ' — they keep the printed values.' : '';
+      })(),
+      doDelete: () => {
+        RETIRED[tplPanel.id] = tplPanel.name;
+        const i = CATALOG.findIndex(c => c.id === tplPanel.id);
+        if (i >= 0) CATALOG.splice(i, 1);
+        const next = CATALOG[Math.min(i, CATALOG.length - 1)];
+        this.setState(st => ({
+          confirmDel: false, draft: null,
+          tpl: next ? next.id : '',
+          selected: st.selected.filter(x => x !== tplPanel.id),
+          banner: 'Template “' + tplPanel.name + '” deleted from the catalog.'
+        }));
+      },
+      draftKicker: s.draft && s.draft.id ? 'Setup · Edit template' : 'Setup · New template',
+      draftSaveLabel: s.draft && s.draft.id ? 'Save changes' : 'Save template',
+      cancelDraft: () => this.setState({ draft: null }),
+      setDraftName: e => { const v = e.target.value; this.setState(st => ({ draft: { ...st.draft, name: v } })); },
+      addRow: () => this.setState(st => ({ draft: { ...st.draft, rows: [...st.draft.rows, this.blankRow()] } })),
+      saveDraft: () => {
+        const d = s.draft;
+        const name = d.name || 'Untitled test';
+        const rows = d.rows.filter(r => r.name.trim()).map(r => ({
+          name: r.name.trim(),
+          unit: r.type === 'head' ? '' : r.unit,
+          m: r.type === 'head' ? '' : r.m,
+          f: r.type === 'head' ? '' : r.f,
+          head: r.type === 'head' || undefined,
+          sub: r.type === 'sub' || undefined
+        }));
+        if (d.id) {
+          const i = CATALOG.findIndex(c => c.id === d.id);
+          if (i >= 0) CATALOG[i] = { ...CATALOG[i], name, rows };
+          this.setState({ draft: null, tpl: d.id, banner: 'Template “' + name + '” updated. Future orders use the new ranges.' });
+          return;
+        }
+        const id = 'tpl' + (CATALOG.length + 1);
+        CATALOG.push({ id, name, heading: name.toUpperCase() + ' REPORT', rows });
+        this.setState({ draft: null, tpl: id, banner: 'Template “' + name + '” saved to the catalog.' });
+      },
+      draft: {
+        name: s.draft ? s.draft.name : '',
+        rows: draftRows.map((r, i) => ({
+          n: i + 1, name: r.name, unit: r.unit, m: r.m, f: r.f,
+          weight: r.type === 'head' ? 600 : 400,
+          indent: r.type === 'sub' ? '14px' : '0px',
+          locked: r.type === 'head',
+          rowBg: r.type === 'head' ? 'oklch(0.98 0.006 95)' : 'white',
+          fieldBg: r.type === 'head' ? 'oklch(0.96 0.006 95)' : 'white',
+          setName: e => this.patchDraftRow(i, { name: e.target.value }),
+          setUnit: e => this.patchDraftRow(i, { unit: e.target.value }),
+          setM: e => this.patchDraftRow(i, { m: e.target.value }),
+          setF: e => this.patchDraftRow(i, { f: e.target.value }),
+          remove: () => this.setState(st => ({ draft: { ...st.draft, rows: st.draft.rows.filter((_, k) => k !== i) } })),
+          types: [
+            { key: 'value', label: 'Value' },
+            { key: 'sub', label: 'Sub' },
+            { key: 'head', label: 'Heading' }
+          ].map(t => ({
+            label: t.label,
+            bg: r.type === t.key ? ACCENT : 'white',
+            fg: r.type === t.key ? 'white' : 'oklch(0.5 0.012 240)',
+            border: r.type === t.key ? ACCENT : 'oklch(0.91 0.008 95)',
+            pick: () => this.patchDraftRow(i, { type: t.key })
+          }))
+        }))
+      },
+      draftTitle: (s.draft && s.draft.name) || 'Untitled test',
+      draftPreview: draftRows.filter(r => r.name.trim()).map(r => ({
+        name: r.name,
+        indent: r.type === 'sub' ? '12px' : '0px',
+        weight: r.type === 'head' ? 700 : 400,
+        dash: r.type === 'head' ? '' : '—',
+        ref: r.type === 'head' ? '' : (r.f || r.m || '')
+      })),
+      draftCount: draftRows.filter(r => r.name.trim()).length,
+      draftSexCount: draftRows.filter(r => r.m && r.f && r.m !== r.f).length,
+      editing: {
+        name: tplPanel.name,
+        rows: tplPanel.rows.map(r => ({
+          name: r.name,
+          unit: r.head ? '' : (r.unit || '—'),
+          refM: r.head ? '' : (r.m || '—'),
+          refF: r.head ? '' : (r.f || '—'),
+          indent: r.sub ? '14px' : '0px',
+          weight: r.bold || r.head ? 600 : 400,
+          rowBg: r.head ? 'oklch(0.98 0.006 95)' : 'white'
+        }))
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

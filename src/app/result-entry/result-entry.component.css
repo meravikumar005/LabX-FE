@@ -1,0 +1,160 @@
+:host {
+  display: contents;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.panels-side {
+  width: 244px;
+  flex: none;
+  border-right: 1px solid var(--border);
+  background: white;
+  padding: 20px 14px;
+  overflow: auto;
+}
+.panels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.panel-tab {
+  padding: 11px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+  border: 1px solid var(--border-light);
+}
+.panel-tab.active {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.panel-tab-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.panel-tab-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  flex: 1;
+}
+.panel-tab-done {
+  font-size: 11px;
+  color: var(--muted-4);
+}
+.progress-track {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--border);
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.entry-header {
+  flex: none;
+  padding: 18px 26px;
+  border-bottom: 1px solid var(--border);
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.patient-name {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+}
+.patient-meta {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.spacer {
+  flex: 1;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 26px 34px;
+}
+.table-card {
+  overflow-x: auto;
+}
+.entry-grid {
+  grid-template-columns: minmax(180px, 1.6fr) 132px 110px 150px 46px;
+  min-width: 700px;
+}
+.table-row.no-hover:hover {
+  background: transparent;
+}
+.head-row {
+  background: var(--row-bg);
+}
+.row-name {
+  font-size: 13px;
+  font-weight: 400;
+}
+.row-name.bold {
+  font-weight: 600;
+}
+.row-name.muted {
+  color: var(--muted-4);
+}
+.value-input {
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-lighter);
+  border-radius: 6px;
+  background: white;
+  width: 100%;
+}
+.value-input:not(:placeholder-shown) {
+  border-color: var(--border);
+}
+.value-input.flagged {
+  border-color: oklch(0.84 0.06 34);
+  background: oklch(0.98 0.02 40);
+}
+.unit-col {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.ref-col {
+  font-size: 11.5px;
+  color: var(--muted-4);
+}
+.flag-col {
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.footnote {
+  font-size: 11.5px;
+  color: var(--muted-3);
+  margin-top: 12px;
+}

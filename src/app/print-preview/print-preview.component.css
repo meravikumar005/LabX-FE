@@ -1,0 +1,175 @@
+:host {
+  display: contents;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-toolbar {
+  flex: none;
+  padding: 12px 26px;
+  border-bottom: 1px solid var(--border);
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.meta {
+  font-size: 11.5px;
+  color: var(--muted-4);
+}
+.spacer {
+  flex: 1;
+}
+.tick {
+  font-size: 10px;
+}
+
+.print-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: oklch(0.93 0.006 95);
+  padding: 26px;
+  display: flex;
+  justify-content: center;
+}
+
+.sheet {
+  width: 794px;
+  flex: none;
+  background: white;
+  box-shadow: 0 2px 16px oklch(0.3 0.02 95 / 0.16);
+  padding: 40px 44px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink-strong);
+  align-self: flex-start;
+}
+
+.letterhead {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  border-bottom: 2px solid oklch(0.3 0.015 240);
+  padding-bottom: 12px;
+}
+.logo,
+.logo-spacer {
+  width: 58px;
+  height: 58px;
+  flex: none;
+}
+.logo {
+  border-radius: 6px;
+  background: var(--accent-light-tint);
+  color: var(--accent-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: 700;
+}
+.hospital-info {
+  flex: 1;
+  text-align: center;
+}
+.hospital-name {
+  font-family: var(--font-serif);
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.hospital-line {
+  font-size: 12px;
+  color: var(--muted-4);
+  margin-top: 3px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 28px;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid oklch(0.78 0.01 240);
+}
+
+.panel-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 14px 0 3px;
+}
+.panel-table {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr 0.8fr 1fr;
+}
+.ph {
+  font-weight: 700;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--muted-4);
+}
+.pr-name {
+  padding: 3px 0;
+  font-weight: 400;
+}
+.pr-name.bold {
+  font-weight: 700;
+}
+.pr-value {
+  padding: 3px 0;
+  font-weight: 400;
+}
+.pr-value.bold {
+  font-weight: 700;
+}
+.arrow {
+  font-weight: 700;
+}
+.pr-unit {
+  padding: 3px 0;
+}
+.pr-ref {
+  padding: 3px 0;
+}
+
+.sign-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 56px;
+}
+.printed-at {
+  font-size: 11px;
+  color: oklch(0.45 0.012 240);
+}
+.signature {
+  text-align: center;
+  font-size: 11.5px;
+}
+.signature-line {
+  width: 156px;
+  border-top: 1px solid oklch(0.4 0.012 240);
+  padding-top: 4px;
+}
+
+@media print {
+  .print-toolbar {
+    display: none !important;
+  }
+  .print-canvas {
+    background: white !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+  .sheet {
+    box-shadow: none !important;
+    width: auto !important;
+  }
+}

@@ -1,0 +1,51 @@
+<div class="shell">
+  <div class="topbar">
+    <div class="brand-mark">SL</div>
+    <div class="brand-name">Sarbottam Hospital · Pathology</div>
+    <div class="divider"></div>
+    <div class="mono today">{{ store.today.ad }} · B.S. {{ store.today.bs }}</div>
+    <div class="spacer"></div>
+    <div class="user">R. Prasad · Lab Technologist</div>
+  </div>
+
+  <div class="body">
+    <div class="sidebar">
+      <a routerLink="/new" (click)="clearBanner()" class="new-report-btn">
+        <span class="plus">+</span>
+        <span>New report</span>
+      </a>
+
+      <div class="nav-gap"></div>
+
+      @for (n of nav(); track n.path) {
+        <a
+          [routerLink]="'/' + n.path"
+          (click)="clearBanner()"
+          routerLinkActive="active"
+          class="nav-item"
+        >
+          <div class="nav-label">{{ n.label }}</div>
+          @if (n.count) {
+            <div class="nav-count mono">{{ n.count }}</div>
+          }
+        </a>
+      }
+
+      <div class="spacer"></div>
+      <div class="hint">
+        Templates define analytes and ranges. Orders pick from them; blank rows never print.
+      </div>
+    </div>
+
+    <div class="content">
+      @if (store.state().banner) {
+        <div class="banner">
+          <div class="banner-text">{{ store.state().banner }}</div>
+          <div class="banner-close" (click)="clearBanner()">×</div>
+        </div>
+      }
+
+      <router-outlet />
+    </div>
+  </div>
+</div>

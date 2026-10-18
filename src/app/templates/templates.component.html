@@ -1,0 +1,177 @@
+<div class="screen">
+  @if (store.state().draft; as draft) {
+    <div class="draft-view">
+      <div class="draft-header">
+        <div class="draft-title-wrap">
+          <div class="kicker">{{ draft.id ? "Setup · Edit template" : "Setup · New template" }}</div>
+          <input
+            class="draft-name-input"
+            [value]="draft.name"
+            (input)="setDraftName($event)"
+            placeholder="Test name, e.g. Serum Electrolytes"
+          />
+        </div>
+        <div class="draft-actions">
+          <div class="btn btn-ghost" (click)="store.cancelDraft()">Cancel</div>
+          <div class="btn btn-primary" (click)="store.saveDraft()">
+            {{ draft.id ? "Save changes" : "Save template" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="draft-body">
+        <div class="draft-main">
+          <div class="card rows-card">
+            <div class="rows-table">
+              <div class="rows-head">
+                <div>#</div>
+                <div>Analyte</div>
+                <div>Unit</div>
+                <div>Range · male</div>
+                <div>Range · female</div>
+                <div>Row type</div>
+                <div></div>
+              </div>
+              @for (row of store.draftRows(); track $index; let i = $index) {
+                <div class="rows-row" [class.head-row]="row.type === 'head'">
+                  <div class="mono row-n">{{ i + 1 }}</div>
+                  <input
+                    class="row-input"
+                    [class.bold]="row.type === 'head'"
+                    [style.margin-left]="row.type === 'sub' ? '14px' : '0px'"
+                    [value]="row.name"
+                    (input)="setRowField(i, 'name', $event)"
+                    placeholder="Analyte name"
+                  />
+                  <input
+                    class="row-input mono"
+                    [value]="row.unit"
+                    (input)="setRowField(i, 'unit', $event)"
+                    placeholder="mg/dl"
+                    [disabled]="row.type === 'head'"
+                  />
+                  <input
+                    class="row-input mono"
+                    [value]="row.m"
+                    (input)="setRowField(i, 'm', $event)"
+                    placeholder="13 - 18"
+                    [disabled]="row.type === 'head'"
+                  />
+                  <input
+                    class="row-input mono"
+                    [value]="row.f"
+                    (input)="setRowField(i, 'f', $event)"
+                    placeholder="12 - 16"
+                    [disabled]="row.type === 'head'"
+                  />
+                  <div class="type-toggles">
+                    @for (t of rowTypes; track t.key) {
+                      <div
+                        class="type-chip"
+                        [class.active]="row.type === t.key"
+                        (click)="store.patchDraftRow(i, { type: t.key })"
+                      >
+                        {{ t.label }}
+                      </div>
+                    }
+                  </div>
+                  <div class="remove-btn" (click)="store.removeDraftRow(i)">×</div>
+                </div>
+              }
+              <div class="add-row" (click)="store.addDraftRow()">+ Add analyte row</div>
+            </div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><b>Value</b> — a normal result line.</div>
+            <div class="legend-item">
+              <b>Sub</b> — indented under the heading above it, like DLC differentials.
+            </div>
+            <div class="legend-item">
+              <b>Heading</b> — a label with no value, printed only when a sub-row below it is used.
+            </div>
+          </div>
+        </div>
+
+        <div class="draft-preview">
+          <div class="kicker">Print preview</div>
+          <div class="preview-box">
+            <div class="preview-title">{{ store.draftTitle() }}</div>
+            @for (row of store.draftPreview(); track $index) {
+              <div class="preview-row">
+                <div class="preview-name" [style.padding-left]="row.indent" [class.bold]="row.head">
+                  {{ row.name }}
+                </div>
+                <div class="preview-dash mono">{{ row.dash }}</div>
+                <div class="preview-ref mono">{{ row.ref }}</div>
+              </div>
+            }
+          </div>
+          <div class="preview-stats">
+            <div class="preview-stat"><span>Rows</span><span class="mono">{{ store.draftCount() }}</span></div>
+            <div class="preview-stat">
+              <span>Sex-specific ranges</span><span class="mono">{{ store.draftSexCount() }}</span>
+            </div>
+          </div>
+          <div class="preview-hint">
+            Ranges accept <b>13 - 18</b>, <b>&lt; 140</b> or plain text like <b>Absent</b>. Numeric ranges drive
+            the automatic high / low arrows.
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="browse-view">
+      <div class="browse-header">
+        <div class="browse-select-wrap">
+          <div class="kicker">Setup · Test templates</div>
+          <div class="select-row">
+            <select class="tpl-select" [value]="store.tplPanel().id" (change)="pickTpl($event)">
+              @for (o of store.tplOptions(); track o.id) {
+                <option [value]="o.id">{{ o.name }}</option>
+              }
+            </select>
+            <div class="btn btn-outline-dashed" (click)="store.openNewDraft()">+ New template</div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        @if (store.state().confirmDel) {
+          <div class="confirm-delete">
+            <div class="confirm-text">
+              Delete "{{ store.editing().name }}" from the catalog?{{ store.deleteUsage() }}
+            </div>
+            <div class="btn btn-ghost btn-sm" (click)="store.cancelDelete()">Keep</div>
+            <div class="btn btn-danger btn-sm" (click)="store.doDelete()">Delete</div>
+          </div>
+        } @else {
+          <div class="header-actions">
+            <div class="btn btn-danger-outline" (click)="store.askDelete()">Delete</div>
+            <div class="btn btn-primary" (click)="store.editTemplate()">Edit template</div>
+          </div>
+        }
+      </div>
+
+      <div class="card editing-card">
+        <div class="table-head editing-grid">
+          <div>Analyte</div>
+          <div>Unit</div>
+          <div>Range · male</div>
+          <div>Range · female</div>
+        </div>
+        @for (row of store.editing().rows; track $index) {
+          <div class="table-row editing-grid">
+            <div [style.padding-left]="row.indent" [class.bold]="row.bold">{{ row.name }}</div>
+            <div class="mono muted-col">{{ row.unit }}</div>
+            <div class="mono muted-col-2">{{ row.refM }}</div>
+            <div class="mono muted-col-2">{{ row.refF }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="footnote">
+        Editing a template changes future orders only. Reports already printed keep the ranges they were printed
+        with.
+      </div>
+    </div>
+  }
+</div>

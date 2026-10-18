@@ -1,0 +1,123 @@
+:host {
+  display: contents;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.spacer {
+  flex: 1;
+}
+
+/* ---------- browse ---------- */
+.browse-view {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  flex: none;
+  padding: 22px 26px 16px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+.header-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.search-input {
+  width: 320px;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: oklch(0.985 0.005 95);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 26px 34px;
+}
+.table-card {
+  overflow-x: auto;
+}
+.patients-grid {
+  grid-template-columns: 96px minmax(130px, 1.2fr) 76px minmax(110px, 1fr) minmax(120px, 1.2fr) minmax(140px, 1.3fr) 110px 70px;
+  min-width: 980px;
+}
+.muted-col {
+  font-size: 11.5px;
+  color: var(--muted-4);
+}
+.patient-name {
+  font-weight: 500;
+}
+.addr-col,
+.ref-col {
+  font-size: 12.5px;
+  color: var(--muted-5);
+}
+.edit-col {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: right;
+}
+
+.empty {
+  padding: 30px 18px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---------- edit ---------- */
+.edit-view {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.edit-header {
+  flex: none;
+  padding: 20px 26px 16px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+.page-title-sm {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 2px;
+}
+.edit-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 26px 34px;
+}
+.form-card {
+  padding: 18px;
+  max-width: 720px;
+}
+.id-line {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 14px;
+}
