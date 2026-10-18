@@ -83,6 +83,7 @@ export class ResultEntryComponent implements OnInit {
   }
 
   goPrint() {
+    this.store.setPrintOrigin("entry");
     this.router.navigate(["/print"]);
   }
 

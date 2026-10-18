@@ -26,8 +26,12 @@ export class ReportsListComponent {
 
   open(row: DecoratedRow) {
     const screen = this.store.openReport(row.report);
-    if (screen === "entry") this.router.navigate(["/entry", row.report.id]);
-    else this.router.navigate(["/print"]);
+    if (screen === "entry") {
+      this.router.navigate(["/entry", row.report.id]);
+    } else {
+      this.store.setPrintOrigin("reports");
+      this.router.navigate(["/print"]);
+    }
   }
 
   toggleSelect(id: string, ev: Event) {

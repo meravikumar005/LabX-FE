@@ -23,7 +23,11 @@ export class DashboardComponent {
 
   open(row: DecoratedRow) {
     const screen = this.store.openReport(row.report);
-    if (screen === "entry") this.router.navigate(["/entry", row.report.id]);
-    else this.router.navigate(["/print"]);
+    if (screen === "entry") {
+      this.router.navigate(["/entry", row.report.id]);
+    } else {
+      this.store.setPrintOrigin("dashboard");
+      this.router.navigate(["/print"]);
+    }
   }
 }

@@ -112,5 +112,6 @@ export interface AppState {
   orderEdit: OrderEdit | null;
   selectedReports: string[];
   deleteTarget: string[] | null;
+  printOrigin: "entry" | "dashboard" | "reports";
   banner: string;
 }

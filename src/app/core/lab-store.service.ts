@@ -63,6 +63,7 @@ export class LabStore {
     orderEdit: null,
     selectedReports: [],
     deleteTarget: null,
+    printOrigin: "entry",
     banner: "",
   });
 
@@ -506,6 +507,10 @@ export class LabStore {
   }
   clearBanner() {
     this.state.update((s) => ({ ...s, banner: "" }));
+  }
+
+  setPrintOrigin(origin: AppState["printOrigin"]) {
+    this.state.update((s) => ({ ...s, printOrigin: origin }));
   }
 
   setReg(key: keyof RegForm, v: string) {

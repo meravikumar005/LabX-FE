@@ -29,6 +29,16 @@ export class PrintPreviewComponent {
     const s = this.status();
     return !!s && this.store.canCancel(s);
   });
+  readonly backLabel = computed(() => {
+    switch (this.store.state().printOrigin) {
+      case "dashboard":
+        return "← Back to dashboard";
+      case "reports":
+        return "← Back to all reports";
+      default:
+        return "← Back to results";
+    }
+  });
 
   flip(key: "printHeader" | "arrows" | "ranges") {
     if (key === "printHeader") this.store.toggleLetterhead();
@@ -51,7 +61,16 @@ export class PrintPreviewComponent {
     this.router.navigate(["/dashboard"]);
   }
 
-  backToEntry() {
-    this.router.navigate(["/entry", this.store.state().activeReport]);
+  goBack() {
+    switch (this.store.state().printOrigin) {
+      case "dashboard":
+        this.router.navigate(["/dashboard"]);
+        break;
+      case "reports":
+        this.router.navigate(["/reports"]);
+        break;
+      default:
+        this.router.navigate(["/entry", this.store.state().activeReport]);
+    }
   }
 }
