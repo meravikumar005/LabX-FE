@@ -1,10 +1,24 @@
 <div class="screen">
   <div class="panels-side">
     <div class="kicker">Panels</div>
-    <div class="panels-list">
+    <div
+      class="panels-list"
+      #panelsList
+      (pointermove)="onListPointerMove($event)"
+      (pointerup)="onListPointerUp($event)"
+      (pointercancel)="onListPointerUp($event)"
+    >
       @for (t of store.panelTabs(); track t.id) {
-        <div class="panel-tab" [class.active]="t.active" (click)="store.setEntryTab(t.id)">
+        <div
+          class="panel-tab"
+          [attr.data-id]="t.id"
+          [class.active]="t.active"
+          [class.dragging]="draggingId() === t.id"
+          (pointerdown)="onTabPointerDown($event, t.id)"
+          (click)="onTabClick(t.id)"
+        >
           <div class="panel-tab-row">
+            <div class="drag-handle" aria-hidden="true">⠿</div>
             <div class="panel-tab-label">{{ t.label }}</div>
             <div class="mono panel-tab-done">{{ t.done }}</div>
           </div>
@@ -33,7 +47,10 @@
           <div class="btn btn-ghost btn-sm" (click)="store.dismissCancelOrder()">Keep order</div>
           <div class="btn btn-danger btn-sm" (click)="confirmCancel()">Cancel order</div>
         </div>
-      } @else {
+      } @else if (!store.state().orderEdit) {
+        @if (editable()) {
+          <div class="btn btn-ghost" (click)="store.startEditOrder()">Edit order</div>
+        }
         @if (cancellable()) {
           <div
             class="btn btn-danger-outline"
@@ -47,49 +64,125 @@
       }
     </div>
 
-    <div class="body">
-      <div class="card table-card" #entryTable>
-        <div class="table-head entry-grid">
-          <div>Investigation</div>
-          <div>Result</div>
-          <div>Unit</div>
-          <div>Reference</div>
-          <div></div>
-        </div>
-        @for (r of store.entryRows(); track r.name) {
-          <div class="table-row entry-grid no-hover" [class.head-row]="r.head">
-            <div
-              class="row-name"
-              [class.bold]="r.bold"
-              [style.padding-left]="r.indent"
-              [class.muted]="r.head"
-            >
-              {{ r.name }}
-            </div>
-            @if (r.isInput) {
-              <input
-                class="mono value-input"
-                [class.flagged]="r.flag"
-                [value]="r.value"
-                (input)="setValue(r.name, $event)"
-                (keydown.enter)="onEnter($event)"
-                placeholder="—"
-              />
-            } @else {
-              <div></div>
+    @if (store.state().orderEdit; as oe) {
+      <div class="body">
+        <div class="card edit-order-card">
+          <div class="edit-order-grid">
+            @for (f of patientFields; track f.key) {
+              <label class="field-label">
+                {{ f.label }}
+                <input
+                  class="field-input"
+                  [class.mono]="f.mono"
+                  [value]="oe.patient[f.key]"
+                  (input)="setEditField(f.key, $event)"
+                  [placeholder]="f.ph"
+                />
+              </label>
             }
-            <div class="mono unit-col">{{ r.unit }}</div>
-            <div class="mono ref-col">{{ r.ref }}</div>
-            <div class="flag-col" [class.flag-high]="r.flag === 'H'" [class.flag-low]="r.flag === 'L'">
-              {{ r.flag === "H" ? "↑" : r.flag === "L" ? "↓" : "" }}
-            </div>
+            <label class="field-label">
+              Sex
+              <select class="field-select" [value]="oe.patient.sex" (change)="setEditSex($event)">
+                <option value="F">Female</option>
+                <option value="M">Male</option>
+              </select>
+            </label>
           </div>
-        }
+        </div>
+
+        <div class="tests-header">
+          <div class="tests-title">Tests for this visit</div>
+          <input
+            class="tests-filter"
+            [value]="oe.q"
+            (input)="setEditQ($event)"
+            placeholder="Filter tests"
+          />
+        </div>
+
+        <div class="cards-grid">
+          @for (c of store.editOrderCards(); track c.id) {
+            <div class="card test-card" [class.on]="c.on">
+              <div class="card-head" (click)="store.toggleEditOrderCard(c.id)">
+                <div class="tick-box" [class.on]="c.on">{{ c.on ? "✓" : "" }}</div>
+                <div class="card-info">
+                  <div class="card-name">{{ c.name }}</div>
+                </div>
+                <div class="mono card-count">{{ c.count }}</div>
+              </div>
+              @if (c.on) {
+                <div class="analytes">
+                  <div class="analytes-head">
+                    <div class="analytes-title">Analytes to print</div>
+                    <div class="analytes-all" (click)="store.includeAllEditOrder(c.id)">All</div>
+                  </div>
+                  <div class="analytes-chips">
+                    @for (a of c.rows; track a.name) {
+                      <div
+                        class="chip"
+                        [class.active]="a.on"
+                        (click)="store.toggleEditOrderAnalyte(c.id, a.name)"
+                      >
+                        {{ a.name }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="edit-order-actions">
+          <div class="btn btn-ghost" (click)="store.cancelEditOrder()">Discard changes</div>
+          <div class="btn btn-primary" (click)="saveOrderEdit()">Save changes</div>
+        </div>
       </div>
-      <div class="footnote">
-        Ranges shown are the {{ store.sexWord() }} column from the template. Blank rows are dropped from the printed
-        page. Press Enter to jump to the next result.
+    } @else {
+      <div class="body">
+        <div class="card table-card" #entryTable>
+          <div class="table-head entry-grid">
+            <div>Investigation</div>
+            <div>Result</div>
+            <div>Unit</div>
+            <div>Reference</div>
+            <div></div>
+          </div>
+          @for (r of store.entryRows(); track r.name) {
+            <div class="table-row entry-grid no-hover" [class.head-row]="r.head">
+              <div
+                class="row-name"
+                [class.bold]="r.bold"
+                [style.padding-left]="r.indent"
+                [class.muted]="r.head"
+              >
+                {{ r.name }}
+              </div>
+              @if (r.isInput) {
+                <input
+                  class="mono value-input"
+                  [class.flagged]="r.flag"
+                  [value]="r.value"
+                  (input)="setValue(r.name, $event)"
+                  (keydown.enter)="onEnter($event)"
+                  placeholder="—"
+                />
+              } @else {
+                <div></div>
+              }
+              <div class="mono unit-col">{{ r.unit }}</div>
+              <div class="mono ref-col">{{ r.ref }}</div>
+              <div class="flag-col" [class.flag-high]="r.flag === 'H'" [class.flag-low]="r.flag === 'L'">
+                {{ r.flag === "H" ? "↑" : r.flag === "L" ? "↓" : "" }}
+              </div>
+            </div>
+          }
+        </div>
+        <div class="footnote">
+          Ranges shown are the {{ store.sexWord() }} column from the template. Blank rows are dropped from the
+          printed page. Press Enter to jump to the next result.
+        </div>
       </div>
-    </div>
+    }
   </div>
 </div>

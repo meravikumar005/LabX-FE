@@ -50,4 +50,8 @@ export class PrintPreviewComponent {
     this.store.confirmCancelOrder();
     this.router.navigate(["/dashboard"]);
   }
+
+  backToEntry() {
+    this.router.navigate(["/entry", this.store.state().activeReport]);
+  }
 }

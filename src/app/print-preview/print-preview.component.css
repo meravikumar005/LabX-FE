@@ -22,6 +22,12 @@
   font-size: 11.5px;
   color: var(--muted-4);
 }
+.back-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
 .spacer {
   flex: 1;
 }

@@ -60,6 +60,7 @@ export class LabStore {
     draft: null,
     confirmDel: false,
     cancelTarget: null,
+    orderEdit: null,
     banner: "",
   });
 
@@ -184,6 +185,8 @@ export class LabStore {
       included: { ...rep.included },
       values: clone(rep.values || {}),
       entryTab: rep.tests[0],
+      cancelTarget: null,
+      orderEdit: null,
       banner: "",
     }));
     return dec.actionScreen;
@@ -214,7 +217,7 @@ export class LabStore {
 
   readonly navCounts = computed(() => ({
     dash: this.todays().length,
-    entry: this.pendingCount() + this.enteredCount(),
+    entry: this.pendingCount(),
     reports: this.state().reports.length,
     templates: this.catalog().length,
   }));
@@ -250,7 +253,7 @@ export class LabStore {
   readonly entryQueue = computed(() => {
     const eq = this.state().eq.trim().toLowerCase();
     return this.state()
-      .reports.filter((r) => r.status === "Ordered" || r.status === "Results entered")
+      .reports.filter((r) => r.status === "Ordered")
       .map((r) => this.decorate(r))
       .filter((r) =>
         !eq || (r.name + " " + r.pid + " " + r.mobile + " " + r.id).toLowerCase().includes(eq),
@@ -390,6 +393,31 @@ export class LabStore {
               .slice(0, 5)
               .map((r) => r.name)
               .join(", ") + (c.rows.length > 5 ? "…" : ""),
+          rows: valueRows.map((r) => ({ name: r.name, on: inc.includes(r.name) })),
+        };
+      });
+  });
+
+  readonly editOrderCards = computed(() => {
+    const oe = this.state().orderEdit;
+    if (!oe) return [];
+    const q = oe.q.trim().toLowerCase();
+    return this.catalog()
+      .filter(
+        (c) =>
+          !q ||
+          c.name.toLowerCase().includes(q) ||
+          c.rows.some((r) => r.name.toLowerCase().includes(q)),
+      )
+      .map((c) => {
+        const on = oe.selected.includes(c.id);
+        const valueRows = c.rows.filter((r) => !r.head);
+        const inc = oe.included[c.id] || valueRows.map((r) => r.name);
+        return {
+          id: c.id,
+          name: c.name,
+          on,
+          count: on ? `${inc.length}/${valueRows.length}` : `${valueRows.length}`,
           rows: valueRows.map((r) => ({ name: r.name, on: inc.includes(r.name) })),
         };
       });
@@ -573,6 +601,19 @@ export class LabStore {
   setEntryTab(id: string) {
     this.state.update((s) => ({ ...s, entryTab: id }));
   }
+  reorderSelected(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    this.state.update((s) => {
+      const arr = s.selected.slice();
+      const from = arr.indexOf(fromId);
+      if (from === -1) return s;
+      arr.splice(from, 1);
+      const to = arr.indexOf(toId);
+      if (to === -1) return s;
+      arr.splice(to, 0, fromId);
+      return { ...s, selected: arr };
+    });
+  }
   setEntryValue(panelId: string, name: string, val: string) {
     this.state.update((s) => ({
       ...s,
@@ -652,6 +693,108 @@ export class LabStore {
         banner: `Order ${id} cancelled.${name ? ` (${name})` : ""}`,
       };
     });
+  }
+
+  canEditOrder(status: ReportStatus): boolean {
+    return status === "Ordered";
+  }
+
+  startEditOrder() {
+    this.state.update((s) => ({
+      ...s,
+      orderEdit: {
+        patient: { ...s.patient },
+        selected: s.selected.slice(),
+        included: { ...s.included },
+        q: "",
+      },
+    }));
+  }
+  cancelEditOrder() {
+    this.state.update((s) => ({ ...s, orderEdit: null }));
+  }
+  setOrderEditField(key: keyof Patient, v: string) {
+    this.state.update((s) => ({
+      ...s,
+      orderEdit: s.orderEdit ? { ...s.orderEdit, patient: { ...s.orderEdit.patient, [key]: v } } : s.orderEdit,
+    }));
+  }
+  setOrderEditQ(v: string) {
+    this.state.update((s) => ({
+      ...s,
+      orderEdit: s.orderEdit ? { ...s.orderEdit, q: v } : s.orderEdit,
+    }));
+  }
+  toggleEditOrderCard(id: string) {
+    this.state.update((s) => {
+      if (!s.orderEdit) return s;
+      const sel = s.orderEdit.selected;
+      return {
+        ...s,
+        orderEdit: {
+          ...s.orderEdit,
+          selected: sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id],
+        },
+      };
+    });
+  }
+  includeAllEditOrder(id: string) {
+    this.state.update((s) => {
+      if (!s.orderEdit) return s;
+      const n = { ...s.orderEdit.included };
+      delete n[id];
+      return { ...s, orderEdit: { ...s.orderEdit, included: n } };
+    });
+  }
+  toggleEditOrderAnalyte(panelId: string, name: string) {
+    const pl = this.panel(panelId);
+    if (!pl) return;
+    this.state.update((s) => {
+      if (!s.orderEdit) return s;
+      const cur =
+        s.orderEdit.included[panelId] || pl.rows.filter((r) => !r.head).map((r) => r.name);
+      const on = cur.includes(name);
+      return {
+        ...s,
+        orderEdit: {
+          ...s.orderEdit,
+          included: {
+            ...s.orderEdit.included,
+            [panelId]: on ? cur.filter((x) => x !== name) : [...cur, name],
+          },
+        },
+      };
+    });
+  }
+  saveOrderEdit(): { ok: boolean } {
+    const oe = this.state().orderEdit;
+    if (!oe) return { ok: false };
+    if (!oe.patient.name.trim() || !oe.selected.length) {
+      this.state.update((s) => ({
+        ...s,
+        banner: "Enter a patient name and pick at least one test.",
+      }));
+      return { ok: false };
+    }
+    this.state.update((st) => {
+      const activeId = st.activeReport;
+      return {
+        ...st,
+        patients: st.patients.map((p) => (p.id === oe.patient.id ? { ...oe.patient } : p)),
+        patient: { ...oe.patient },
+        selected: oe.selected.slice(),
+        included: { ...oe.included },
+        entryTab: oe.selected.includes(st.entryTab) ? st.entryTab : oe.selected[0] ?? st.entryTab,
+        reports: st.reports.map((r) =>
+          r.id === activeId
+            ? { ...r, pid: oe.patient.id, tests: oe.selected.slice(), included: { ...oe.included } }
+            : r,
+        ),
+        orderEdit: null,
+        banner: `Order ${activeId} updated.`,
+      };
+    });
+    return { ok: true };
   }
 
   pickTemplate(id: string) {

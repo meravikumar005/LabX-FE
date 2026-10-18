@@ -1,5 +1,6 @@
 <div class="screen">
   <div class="print-toolbar">
+    <div class="back-link" (click)="backToEntry()">← Back to results</div>
     <div class="mono meta">{{ store.state().activeReport }} · {{ store.state().patient.name }} · 1 page A4</div>
     @if (status(); as s) {
       <span class="badge" [class]="store.statusClass(s)">{{ s }}</span>

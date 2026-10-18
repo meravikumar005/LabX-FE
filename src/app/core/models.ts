@@ -78,6 +78,13 @@ export interface RegForm {
   ref: string;
 }
 
+export interface OrderEdit {
+  patient: Patient;
+  selected: string[];
+  included: Record<string, string[]>;
+  q: string;
+}
+
 export interface AppState {
   patients: Patient[];
   reports: Report[];
@@ -101,5 +108,6 @@ export interface AppState {
   draft: Draft | null;
   confirmDel: boolean;
   cancelTarget: string | null;
+  orderEdit: OrderEdit | null;
   banner: string;
 }
