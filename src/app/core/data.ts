@@ -1,4 +1,9 @@
-import { Panel, Patient, Report } from "./models";
+import { Panel, Patient, Report, User } from "./models";
+
+export const USERS_SEED: User[] = [
+  { username: "rprasad", password: "labx123", name: "R. Prasad", role: "Lab Technologist" },
+  { username: "admin", password: "admin123", name: "Admin", role: "Administrator" },
+];
 
 export const CATALOG_SEED: Panel[] = [
   {

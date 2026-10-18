@@ -315,19 +315,20 @@ input::placeholder {
 @media print {
   html,
   body,
-  app-root {
+  app-root,
+  app-shell {
     height: auto !important;
   }
-  app-root .shell,
-  app-root .body,
-  app-root .content {
+  app-shell .shell,
+  app-shell .body,
+  app-shell .content {
     height: auto !important;
     overflow: visible !important;
     display: block !important;
   }
-  app-root .topbar,
-  app-root .sidebar,
-  app-root .banner {
+  app-shell .topbar,
+  app-shell .sidebar,
+  app-shell .banner {
     display: none !important;
   }
 }

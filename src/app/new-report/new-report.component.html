@@ -1,7 +1,7 @@
 <div class="screen">
   <div class="main">
     <div class="kicker">Registration</div>
-    <div class="page-title">New report</div>
+    <div class="page-title">New test</div>
 
     <div class="card reg-card">
       <div class="reg-grid">
@@ -103,8 +103,13 @@
     <div class="selected-names">
       @for (id of store.state().selected; track id) {
         @if (store.panel(id); as p) {
-          <div class="selected-name">{{ p.name }}</div>
+          <div class="selected-name">
+            <span class="selected-name-text">{{ p.name }}</span>
+            <span class="selected-name-remove" (click)="store.toggleCard(id)">×</span>
+          </div>
         }
+      } @empty {
+        <div class="selected-name-empty">No tests selected yet</div>
       }
     </div>
     <div class="spacer"></div>

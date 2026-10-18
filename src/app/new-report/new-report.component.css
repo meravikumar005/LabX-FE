@@ -192,8 +192,34 @@
   gap: 6px;
 }
 .selected-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   color: oklch(0.35 0.012 240);
+}
+.selected-name-text {
+  flex: 1;
+  min-width: 0;
+}
+.selected-name-remove {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--muted-3);
+  cursor: pointer;
+}
+.selected-name-remove:hover {
+  background: var(--high-bg);
+  color: var(--high-fg);
+}
+.selected-name-empty {
+  font-size: 12px;
+  color: var(--muted-3);
 }
 .save-order-btn {
   width: 100%;

@@ -60,6 +60,16 @@
   font-size: 12.5px;
   color: var(--muted-4);
 }
+.logout-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.logout-btn:hover {
+  color: var(--accent-hover);
+}
 
 .body {
   flex: 1;

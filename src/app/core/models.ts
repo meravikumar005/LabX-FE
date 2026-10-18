@@ -17,6 +17,13 @@ export interface Panel {
   rows: PanelRow[];
 }
 
+export interface User {
+  username: string;
+  password: string;
+  name: string;
+  role: string;
+}
+
 export type Sex = "M" | "F";
 
 export interface Patient {
