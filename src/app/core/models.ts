@@ -91,8 +91,6 @@ export interface AppState {
   rq: string;
   q: string;
   eq: string;
-  pq: string;
-  patientDraft: Patient | null;
   dashFilter: "All" | "Pending" | "Done";
   statusFilter: "All" | ReportStatus;
   printHeader: boolean;
@@ -102,5 +100,6 @@ export interface AppState {
   tpl: string;
   draft: Draft | null;
   confirmDel: boolean;
+  cancelTarget: string | null;
   banner: string;
 }

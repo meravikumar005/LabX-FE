@@ -27,12 +27,28 @@
         </div>
       </div>
       <div class="spacer"></div>
-      <div class="btn btn-ghost" (click)="goPrint()">Print preview</div>
-      <div class="btn btn-primary" (click)="saveResults()">Save results</div>
+      @if (store.state().cancelTarget === store.state().activeReport) {
+        <div class="cancel-confirm">
+          <div class="cancel-confirm-text">Cancel this order? This can't be undone.</div>
+          <div class="btn btn-ghost btn-sm" (click)="store.dismissCancelOrder()">Keep order</div>
+          <div class="btn btn-danger btn-sm" (click)="confirmCancel()">Cancel order</div>
+        </div>
+      } @else {
+        @if (cancellable()) {
+          <div
+            class="btn btn-danger-outline"
+            (click)="store.askCancelOrder(store.state().activeReport)"
+          >
+            Cancel order
+          </div>
+        }
+        <div class="btn btn-ghost" (click)="goPrint()">Print preview</div>
+        <div class="btn btn-primary" (click)="saveResults()">Save results</div>
+      }
     </div>
 
     <div class="body">
-      <div class="card table-card">
+      <div class="card table-card" #entryTable>
         <div class="table-head entry-grid">
           <div>Investigation</div>
           <div>Result</div>
@@ -56,6 +72,7 @@
                 [class.flagged]="r.flag"
                 [value]="r.value"
                 (input)="setValue(r.name, $event)"
+                (keydown.enter)="onEnter($event)"
                 placeholder="—"
               />
             } @else {
@@ -71,7 +88,7 @@
       </div>
       <div class="footnote">
         Ranges shown are the {{ store.sexWord() }} column from the template. Blank rows are dropped from the printed
-        page.
+        page. Press Enter to jump to the next result.
       </div>
     </div>
   </div>

@@ -95,6 +95,26 @@
   flex: 1;
 }
 
+.btn-sm {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+.cancel-confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--high-bg);
+  border: 1px solid var(--high-border);
+  border-radius: 8px;
+  padding: 8px 10px 8px 14px;
+}
+.cancel-confirm-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--high-strong);
+  max-width: 260px;
+}
+
 .body {
   flex: 1;
   min-height: 0;

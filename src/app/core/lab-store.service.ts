@@ -50,8 +50,6 @@ export class LabStore {
     rq: "",
     q: "",
     eq: "",
-    pq: "",
-    patientDraft: null,
     dashFilter: "All",
     statusFilter: "All",
     printHeader: true,
@@ -61,6 +59,7 @@ export class LabStore {
     tpl: "cbc",
     draft: null,
     confirmDel: false,
+    cancelTarget: null,
     banner: "",
   });
 
@@ -139,8 +138,10 @@ export class LabStore {
       rep.status === "Ordered"
         ? { label: "Enter", screen: "entry" }
         : rep.status === "Results entered"
-          ? { label: "Preview", screen: "print" }
-          : { label: "Open", screen: "print" };
+          ? { label: "Verify", screen: "print" }
+          : rep.status === "Verified"
+            ? { label: "Print", screen: "print" }
+            : { label: "View", screen: "print" };
     return {
       id: rep.id,
       date: rep.date,
@@ -215,7 +216,6 @@ export class LabStore {
     dash: this.todays().length,
     entry: this.pendingCount() + this.enteredCount(),
     reports: this.state().reports.length,
-    patients: this.state().patients.length,
     templates: this.catalog().length,
   }));
 
@@ -290,32 +290,6 @@ export class LabStore {
       n: f === "All" ? reports.length : reports.filter((r) => r.status === f).length,
       active: sf === f,
     }));
-  });
-
-  readonly patientRows = computed(() => {
-    const pq = this.state().pq.trim().toLowerCase();
-    const reports = this.state().reports;
-    return this.state()
-      .patients.filter(
-        (p) =>
-          !pq ||
-          [p.id, p.name, p.mobile].some((v) => String(v ?? "").toLowerCase().includes(pq)),
-      )
-      .map((p) => {
-        const visits = reports.filter((r) => r.pid === p.id);
-        return {
-          patient: p,
-          id: p.id,
-          name: p.name,
-          age: p.age,
-          sex: p.sex,
-          mobile: p.mobile,
-          address: p.address,
-          ref: p.ref,
-          visits: visits.length,
-          lastDate: visits[0]?.date ?? "—",
-        };
-      });
   });
 
   readonly activePanels = computed(() =>
@@ -486,39 +460,7 @@ export class LabStore {
   setEq(v: string) {
     this.state.update((s) => ({ ...s, eq: v }));
   }
-  setPq(v: string) {
-    this.state.update((s) => ({ ...s, pq: v }));
-  }
 
-  editPatient(id: string) {
-    const p = this.state().patients.find((x) => x.id === id);
-    if (!p) return;
-    this.state.update((s) => ({ ...s, patientDraft: { ...p } }));
-  }
-  cancelPatientEdit() {
-    this.state.update((s) => ({ ...s, patientDraft: null }));
-  }
-  setPatientDraftField(key: keyof Patient, v: string) {
-    this.state.update((s) => ({
-      ...s,
-      patientDraft: s.patientDraft ? { ...s.patientDraft, [key]: v } : s.patientDraft,
-    }));
-  }
-  savePatientEdit(): { ok: boolean } {
-    const draft = this.state().patientDraft;
-    if (!draft || !draft.name.trim()) {
-      this.state.update((s) => ({ ...s, banner: "Enter a patient name before saving." }));
-      return { ok: false };
-    }
-    this.state.update((s) => ({
-      ...s,
-      patients: s.patients.map((p) => (p.id === draft.id ? { ...draft } : p)),
-      patient: s.patient.id === draft.id ? { ...draft, bill: s.patient.bill } : s.patient,
-      patientDraft: null,
-      banner: `Patient "${draft.name}" updated.`,
-    }));
-    return { ok: true };
-  }
   setDashFilter(f: AppState["dashFilter"]) {
     this.state.update((s) => ({ ...s, dashFilter: f }));
   }
@@ -665,14 +607,51 @@ export class LabStore {
   toggleRanges() {
     this.state.update((s) => ({ ...s, ranges: !s.ranges }));
   }
+  verifyReport() {
+    this.state.update((st) => ({
+      ...st,
+      reports: st.reports.map((r) =>
+        r.id === st.activeReport && (r.status === "Ordered" || r.status === "Results entered")
+          ? { ...r, status: "Verified" as ReportStatus }
+          : r,
+      ),
+      banner: `${st.activeReport} verified. Ready to print.`,
+    }));
+  }
+
   printReport() {
     this.state.update((st) => ({
       ...st,
       reports: st.reports.map((r) =>
         r.id === st.activeReport ? { ...r, status: "Printed" as ReportStatus } : r,
       ),
-      banner: `${st.activeReport} verified and sent to the printer.`,
+      banner: `${st.activeReport} sent to the printer.`,
     }));
+  }
+
+  canCancel(status: ReportStatus): boolean {
+    return status === "Ordered" || status === "Results entered";
+  }
+
+  askCancelOrder(id: string) {
+    this.state.update((s) => ({ ...s, cancelTarget: id }));
+  }
+  dismissCancelOrder() {
+    this.state.update((s) => ({ ...s, cancelTarget: null }));
+  }
+  confirmCancelOrder() {
+    const id = this.state().cancelTarget;
+    if (!id) return;
+    this.state.update((st) => {
+      const rep = st.reports.find((r) => r.id === id);
+      const name = rep ? st.patients.find((p) => p.id === rep.pid)?.name : undefined;
+      return {
+        ...st,
+        reports: st.reports.filter((r) => r.id !== id),
+        cancelTarget: null,
+        banner: `Order ${id} cancelled.${name ? ` (${name})` : ""}`,
+      };
+    });
   }
 
   pickTemplate(id: string) {

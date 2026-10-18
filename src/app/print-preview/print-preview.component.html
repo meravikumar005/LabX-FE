@@ -1,6 +1,9 @@
 <div class="screen">
   <div class="print-toolbar">
     <div class="mono meta">{{ store.state().activeReport }} · {{ store.state().patient.name }} · 1 page A4</div>
+    @if (status(); as s) {
+      <span class="badge" [class]="store.statusClass(s)">{{ s }}</span>
+    }
     <div class="spacer"></div>
     @for (t of toggles; track t.key) {
       <div class="chip" [class.active]="store.state()[t.key]" (click)="flip(t.key)">
@@ -8,7 +11,29 @@
         <div>{{ t.label }}</div>
       </div>
     }
-    <div class="btn btn-primary" (click)="verifyAndPrint()">Verify &amp; print</div>
+    @if (store.state().cancelTarget === store.state().activeReport) {
+      <div class="cancel-confirm">
+        <div class="cancel-confirm-text">Cancel this order? This can't be undone.</div>
+        <div class="btn btn-ghost btn-sm" (click)="store.dismissCancelOrder()">Keep order</div>
+        <div class="btn btn-danger btn-sm" (click)="confirmCancel()">Cancel order</div>
+      </div>
+    } @else {
+      @if (cancellable()) {
+        <div
+          class="btn btn-danger-outline"
+          (click)="store.askCancelOrder(store.state().activeReport)"
+        >
+          Cancel order
+        </div>
+      }
+      @if (isVerified()) {
+        <div class="btn btn-primary" (click)="print()">
+          {{ status() === "Printed" ? "Reprint" : "Print" }}
+        </div>
+      } @else {
+        <div class="btn btn-primary" (click)="verify()">Verify report</div>
+      }
+    }
   </div>
 
   <div class="print-canvas">

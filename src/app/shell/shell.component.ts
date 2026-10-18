@@ -22,7 +22,6 @@ export class ShellComponent {
     return [
       { path: "dashboard", label: "Dashboard", count: `${c.dash}` },
       { path: "entry", label: "Result entry", count: `${c.entry}` },
-      { path: "patients", label: "Patient list", count: `${c.patients}` },
       { path: "reports", label: "All reports", count: `${c.reports}` },
       { path: "templates", label: "Test templates", count: `${c.templates}` },
     ];
