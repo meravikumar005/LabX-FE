@@ -70,6 +70,7 @@ export interface Draft {
 }
 
 export interface RegForm {
+  pid: string;
   name: string;
   age: string;
   sex: Sex;
@@ -109,5 +110,7 @@ export interface AppState {
   confirmDel: boolean;
   cancelTarget: string | null;
   orderEdit: OrderEdit | null;
+  selectedReports: string[];
+  deleteTarget: string[] | null;
   banner: string;
 }

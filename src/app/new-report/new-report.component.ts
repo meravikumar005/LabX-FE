@@ -22,6 +22,7 @@ export class NewReportComponent {
     ph: string;
     mono?: boolean;
   }[] = [
+    { key: "pid", label: "Patient ID (optional)", ph: "P-1042 to reuse, blank for new", mono: true },
     { key: "name", label: "Full name", ph: "Sunita Devi" },
     { key: "age", label: "Age", ph: "50", mono: true },
     { key: "mobile", label: "Mobile number", ph: "98XXXXXXXX", mono: true },

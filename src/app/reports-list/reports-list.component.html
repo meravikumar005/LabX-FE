@@ -24,18 +24,50 @@
   </div>
 
   <div class="body">
+    @if (store.state().deleteTarget; as ids) {
+      <div class="bulk-bar bulk-confirm">
+        <div class="bulk-text">
+          Delete {{ ids.length }} report{{ ids.length === 1 ? "" : "s" }}? This can't be undone.
+        </div>
+        <div class="spacer"></div>
+        <div class="btn btn-ghost btn-sm" (click)="store.dismissDeleteReports()">Keep</div>
+        <div class="btn btn-danger btn-sm" (click)="confirmDelete()">Delete</div>
+      </div>
+    } @else if (store.state().selectedReports.length > 0) {
+      <div class="bulk-bar">
+        <div class="bulk-text">{{ store.state().selectedReports.length }} selected</div>
+        <div class="spacer"></div>
+        <div class="btn btn-ghost btn-sm" (click)="store.clearReportSelection()">Clear</div>
+        <div class="btn btn-danger-outline btn-sm" (click)="askBulkDelete()">Delete selected</div>
+      </div>
+    }
+
     <div class="card table-card">
       <div class="table-head reports-grid">
+        <div class="select-col">
+          <input
+            type="checkbox"
+            [checked]="store.allReportsSelected()"
+            (change)="toggleSelectAll()"
+          />
+        </div>
         <div>Report</div>
         <div>Date</div>
         <div>Patient</div>
         <div>Age/Sex</div>
         <div>Tests</div>
-        <div>Status</div>
+        <div></div>
         <div></div>
       </div>
       @for (r of store.reportRows(); track r.id) {
         <div class="table-row reports-grid">
+          <div class="select-col">
+            <input
+              type="checkbox"
+              [checked]="store.state().selectedReports.includes(r.id)"
+              (click)="toggleSelect(r.id, $event)"
+            />
+          </div>
           <div class="mono muted-col">{{ r.id }}</div>
           <div class="mono muted-col">{{ r.date }}</div>
           <div>
@@ -44,8 +76,8 @@
           </div>
           <div class="mono">{{ r.ageSex }}</div>
           <div class="tests-col">{{ r.tests }}</div>
-          <div><span class="badge" [class]="store.statusClass(r.status)">{{ r.status }}</span></div>
-          <div class="action-col" (click)="open(r)">{{ r.actionLabel }} →</div>
+          <div class="action-col" (click)="open(r)">Print →</div>
+          <div class="delete-col" (click)="askDelete(r.id, $event)" title="Delete report">×</div>
         </div>
       }
       @if (store.reportRows().length === 0) {

@@ -29,4 +29,26 @@ export class ReportsListComponent {
     if (screen === "entry") this.router.navigate(["/entry", row.report.id]);
     else this.router.navigate(["/print"]);
   }
+
+  toggleSelect(id: string, ev: Event) {
+    ev.stopPropagation();
+    this.store.toggleReportSelect(id);
+  }
+
+  toggleSelectAll() {
+    this.store.toggleSelectAllReports();
+  }
+
+  askDelete(id: string, ev: Event) {
+    ev.stopPropagation();
+    this.store.askDeleteReports([id]);
+  }
+
+  askBulkDelete() {
+    this.store.askDeleteReports(this.store.state().selectedReports);
+  }
+
+  confirmDelete() {
+    this.store.confirmDeleteReports();
+  }
 }

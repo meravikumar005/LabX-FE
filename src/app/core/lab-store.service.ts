@@ -55,12 +55,14 @@ export class LabStore {
     printHeader: true,
     arrows: true,
     ranges: true,
-    reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+    reg: { pid: "", name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
     tpl: "cbc",
     draft: null,
     confirmDel: false,
     cancelTarget: null,
     orderEdit: null,
+    selectedReports: [],
+    deleteTarget: null,
     banner: "",
   });
 
@@ -276,6 +278,13 @@ export class LabStore {
       })
       .filter((r) => sf === "All" || r.status === sf)
       .map((r) => this.decorate(r));
+  });
+
+  readonly allReportsSelected = computed(() => {
+    const rows = this.reportRows();
+    if (!rows.length) return false;
+    const sel = this.state().selectedReports;
+    return rows.every((r) => sel.includes(r.id));
   });
 
   readonly statusChips = computed(() => {
@@ -505,7 +514,7 @@ export class LabStore {
   clearReg() {
     this.state.update((s) => ({
       ...s,
-      reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+      reg: { pid: "", name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
     }));
   }
 
@@ -545,9 +554,28 @@ export class LabStore {
     return "P-" + (1048 + s.patients.length - PATIENTS_SEED.length);
   }
 
+  readonly regPidMatch = computed(() => {
+    const pid = this.state().reg.pid.trim().toLowerCase();
+    if (!pid) return undefined;
+    return this.state().patients.find((p) => p.id.toLowerCase() === pid);
+  });
+
   saveOrder(): { ok: boolean; reportId?: string } {
     const s = this.state();
-    const name = s.reg.name || s.patient.name;
+    const pidInput = s.reg.pid.trim();
+    const existing = pidInput
+      ? s.patients.find((p) => p.id.toLowerCase() === pidInput.toLowerCase())
+      : undefined;
+
+    if (pidInput && !existing && !s.reg.name) {
+      this.state.update((st) => ({
+        ...st,
+        banner: `No patient found with ID "${pidInput}". Enter their details to register a new patient, or check the ID.`,
+      }));
+      return { ok: false };
+    }
+
+    const name = existing ? existing.name : s.reg.name || s.patient.name;
     if (!name || !s.selected.length) {
       this.state.update((st) => ({
         ...st,
@@ -558,11 +586,17 @@ export class LabStore {
     const num = 394 + (s.reports.length - REPORTS_SEED.length);
     const id = "R-26-0" + num;
     let pat: Patient = s.patient;
-    if (s.reg.name) {
+    let isNewPatient = false;
+    if (existing) {
+      pat = existing;
+    } else if (s.reg.name) {
+      isNewPatient = true;
       pat = {
-        id: s.patients.length
-          ? "P-" + (1048 + s.patients.length - PATIENTS_SEED.length)
-          : "P-1048",
+        id:
+          pidInput ||
+          (s.patients.length
+            ? "P-" + (1048 + s.patients.length - PATIENTS_SEED.length)
+            : "P-1048"),
         name: s.reg.name,
         age: s.reg.age,
         sex: s.reg.sex,
@@ -574,7 +608,7 @@ export class LabStore {
     }
     this.state.update((st) => ({
       ...st,
-      patients: st.reg.name ? [pat, ...st.patients] : st.patients,
+      patients: isNewPatient ? [pat, ...st.patients] : st.patients,
       patient: { ...pat },
       reports: [
         {
@@ -592,8 +626,10 @@ export class LabStore {
       ],
       activeReport: id,
       values: {},
-      reg: { name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
-      banner: `Order ${id} saved for ${pat.name}. It is waiting in Result entry.`,
+      reg: { pid: "", name: "", age: "", sex: "F", mobile: "", address: "", ref: "" },
+      banner: existing
+        ? `Order ${id} saved for ${pat.name} (${pat.id}).`
+        : `Order ${id} saved for ${pat.name}. It is waiting in Result entry.`,
     }));
     return { ok: true, reportId: id };
   }
@@ -691,6 +727,60 @@ export class LabStore {
         reports: st.reports.filter((r) => r.id !== id),
         cancelTarget: null,
         banner: `Order ${id} cancelled.${name ? ` (${name})` : ""}`,
+      };
+    });
+  }
+
+  toggleReportSelect(id: string) {
+    this.state.update((s) => ({
+      ...s,
+      selectedReports: s.selectedReports.includes(id)
+        ? s.selectedReports.filter((x) => x !== id)
+        : [...s.selectedReports, id],
+    }));
+  }
+  toggleSelectAllReports() {
+    const ids = this.reportRows().map((r) => r.id);
+    this.state.update((s) => {
+      const allSelected = ids.length > 0 && ids.every((id) => s.selectedReports.includes(id));
+      return {
+        ...s,
+        selectedReports: allSelected
+          ? s.selectedReports.filter((id) => !ids.includes(id))
+          : Array.from(new Set([...s.selectedReports, ...ids])),
+      };
+    });
+  }
+  clearReportSelection() {
+    this.state.update((s) => ({ ...s, selectedReports: [] }));
+  }
+
+  askDeleteReports(ids: string[]) {
+    if (!ids.length) return;
+    this.state.update((s) => ({ ...s, deleteTarget: ids }));
+  }
+  dismissDeleteReports() {
+    this.state.update((s) => ({ ...s, deleteTarget: null }));
+  }
+  confirmDeleteReports() {
+    const ids = this.state().deleteTarget;
+    if (!ids || !ids.length) return;
+    this.state.update((st) => {
+      const idSet = new Set(ids);
+      const singleName =
+        ids.length === 1
+          ? st.patients.find((p) => p.id === st.reports.find((r) => r.id === ids[0])?.pid)?.name
+          : undefined;
+      return {
+        ...st,
+        reports: st.reports.filter((r) => !idSet.has(r.id)),
+        selectedReports: st.selectedReports.filter((id) => !idSet.has(id)),
+        activeReport: idSet.has(st.activeReport) ? "" : st.activeReport,
+        deleteTarget: null,
+        banner:
+          ids.length === 1
+            ? `Report ${ids[0]} deleted.${singleName ? ` (${singleName})` : ""}`
+            : `${ids.length} reports deleted.`,
       };
     });
   }
