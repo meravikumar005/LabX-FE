@@ -1,4 +1,5 @@
 import { Component, computed, signal } from "@angular/core";
+import { NgTemplateOutlet } from "@angular/common";
 import { LabStore } from "../core/lab-store.service";
 import {
   PageSetup,
@@ -15,12 +16,22 @@ type TextKey = "hospitalName" | "addressLine" | "departmentLine" | "logoInitials
 
 @Component({
   selector: "app-page-setup",
-  imports: [],
+  imports: [NgTemplateOutlet],
   templateUrl: "./page-setup.component.html",
   styleUrl: "./page-setup.component.css",
 })
 export class PageSetupComponent {
   constructor(public store: LabStore) {}
+
+  readonly modalScale = 2.6;
+  readonly previewModalOpen = signal(false);
+
+  openPreviewModal() {
+    this.previewModalOpen.set(true);
+  }
+  closePreviewModal() {
+    this.previewModalOpen.set(false);
+  }
 
   readonly paperSizes: PaperSize[] = ["A4", "Letter", "A5"];
 

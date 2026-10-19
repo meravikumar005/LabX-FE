@@ -349,10 +349,7 @@
     </div>
   </div>
 
-  <div class="preview-side">
-    <div class="kicker">Live preview</div>
-    <div class="preview-hint">This is what a printed report will look like with these settings.</div>
-
+  <ng-template #previewContent>
     <div
       class="preview-page"
       [style.width.px]="preview().widthPx"
@@ -413,5 +410,46 @@
         </div>
       </div>
     </div>
+  </ng-template>
+
+  <div class="preview-side">
+    <div class="preview-side-head">
+      <div>
+        <div class="kicker">Live preview</div>
+        <div class="preview-hint">This is what a printed report will look like with these settings.</div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm preview-expand-btn" (click)="openPreviewModal()">
+        ⤢ View larger
+      </button>
+    </div>
+
+    <ng-container [ngTemplateOutlet]="previewContent"></ng-container>
   </div>
+
+  @if (previewModalOpen()) {
+    <div class="preview-modal-backdrop" (click)="closePreviewModal()">
+      <div class="preview-modal" (click)="$event.stopPropagation()">
+        <div class="preview-modal-header">
+          <div class="preview-modal-title">Live preview</div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="closePreviewModal()">✕ Close</button>
+        </div>
+        <div class="preview-modal-body">
+          <div
+            class="preview-scale-outer"
+            [style.width.px]="preview().widthPx * modalScale"
+            [style.height.px]="preview().heightPx * modalScale"
+          >
+            <div
+              class="preview-scale-inner"
+              [style.width.px]="preview().widthPx"
+              [style.height.px]="preview().heightPx"
+              [style.transform]="'scale(' + modalScale + ')'"
+            >
+              <ng-container [ngTemplateOutlet]="previewContent"></ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>
