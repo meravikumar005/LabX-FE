@@ -1,4 +1,47 @@
-import { Panel, Patient, Report, User } from "./models";
+import { PageSetup, Panel, Patient, Report, User } from "./models";
+
+export const PAGE_SETUP_DEFAULT: PageSetup = {
+  paperSize: "A4",
+  marginTopMm: 15,
+  marginRightMm: 15,
+  marginBottomMm: 15,
+  marginLeftMm: 15,
+  useOwnLetterhead: false,
+  headerOffsetMm: 40,
+  showPatientMeta: true,
+  hospitalName: "Sarbottam Hospital Pvt. Ltd.",
+  addressLine: "Birgunj-8, Parsa, Nepal · 051-527755",
+  departmentLine: "Department of Pathology",
+  logoInitials: "SH",
+  patientFields: [
+    { id: "pf-name", source: "name", label: "Name", showLabel: true, column: "left", marginTopMm: 0, marginLeftMm: 0 },
+    { id: "pf-bill", source: "bill", label: "Bill No.", showLabel: true, column: "right", marginTopMm: 0, marginLeftMm: 0 },
+    { id: "pf-agesex", source: "ageSex", label: "Age / Sex", showLabel: true, column: "left", marginTopMm: 0, marginLeftMm: 0 },
+    { id: "pf-date", source: "date", label: "Date", showLabel: true, column: "right", marginTopMm: 0, marginLeftMm: 0 },
+    { id: "pf-ref", source: "ref", label: "Referred by", showLabel: true, column: "left", marginTopMm: 0, marginLeftMm: 0 },
+    { id: "pf-reportno", source: "reportNo", label: "Report No.", showLabel: true, column: "right", marginTopMm: 0, marginLeftMm: 0 },
+  ],
+  resultColumns: [
+    { key: "investigation", label: "Investigation", show: true },
+    { key: "result", label: "Result", show: true },
+    { key: "unit", label: "Unit", show: true },
+    { key: "referenceRange", label: "Reference Range", show: true },
+  ],
+};
+
+export const PATIENT_FIELD_LABELS: Record<PageSetup["patientFields"][number]["source"], string> = {
+  name: "Name",
+  patientId: "Patient ID",
+  ageSex: "Age / Sex",
+  mobile: "Mobile",
+  address: "Address",
+  ref: "Referred by",
+  bill: "Bill No.",
+  date: "Date",
+  dateAd: "Date (A.D)",
+  dateBs: "Date (B.S)",
+  reportNo: "Report No.",
+};
 
 export const USERS_SEED: User[] = [
   { username: "rprasad", password: "labx123", name: "R. Prasad", role: "Lab Technologist" },

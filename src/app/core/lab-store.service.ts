@@ -2,15 +2,26 @@ import { Injectable, computed, signal } from "@angular/core";
 import {
   AppState,
   DraftRow,
+  PageSetup,
   Panel,
   PanelRow,
   Patient,
+  PatientFieldSource,
   Report,
   ReportStatus,
+  ResultColumnKey,
   RegForm,
   RowType,
 } from "./models";
-import { CATALOG_SEED, PATIENTS_SEED, REPORTS_SEED, TODAY_AD, TODAY_BS } from "./data";
+import {
+  CATALOG_SEED,
+  PAGE_SETUP_DEFAULT,
+  PATIENT_FIELD_LABELS,
+  PATIENTS_SEED,
+  REPORTS_SEED,
+  TODAY_AD,
+  TODAY_BS,
+} from "./data";
 
 function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
@@ -64,6 +75,7 @@ export class LabStore {
     selectedReports: [],
     deleteTarget: null,
     printOrigin: "entry",
+    pageSetup: clone(PAGE_SETUP_DEFAULT),
     banner: "",
   });
 
@@ -511,6 +523,192 @@ export class LabStore {
 
   setPrintOrigin(origin: AppState["printOrigin"]) {
     this.state.update((s) => ({ ...s, printOrigin: origin }));
+  }
+
+  static readonly PAPER_SIZES_MM: Record<PageSetup["paperSize"], { w: number; h: number }> = {
+    A4: { w: 210, h: 297 },
+    Letter: { w: 215.9, h: 279.4 },
+    A5: { w: 148, h: 210 },
+  };
+
+  updatePageSetup(patch: Partial<PageSetup>) {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: { ...s.pageSetup, ...patch },
+      printHeader: "useOwnLetterhead" in patch ? !patch.useOwnLetterhead : s.printHeader,
+      banner: "Page setup updated.",
+    }));
+  }
+
+  resetPageSetup() {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: clone(PAGE_SETUP_DEFAULT),
+      printHeader: !PAGE_SETUP_DEFAULT.useOwnLetterhead,
+      banner: "Page setup reset to defaults.",
+    }));
+  }
+
+  patientFieldValue(source: PatientFieldSource): string {
+    const s = this.state();
+    switch (source) {
+      case "name":
+        return s.patient.name;
+      case "patientId":
+        return s.patient.id;
+      case "ageSex":
+        return `${s.patient.age} Yrs / ${this.sexWord()}`;
+      case "mobile":
+        return s.patient.mobile;
+      case "address":
+        return s.patient.address;
+      case "ref":
+        return s.patient.ref;
+      case "bill":
+        return s.patient.bill || "—";
+      case "date":
+        return `${this.today.ad} · B.S. ${this.today.bs}`;
+      case "dateAd":
+        return this.today.ad;
+      case "dateBs":
+        return this.today.bs;
+      case "reportNo":
+        return s.activeReport;
+    }
+  }
+
+  addPatientField(source: PatientFieldSource, column: "left" | "right") {
+    const id = `pf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: [
+          ...s.pageSetup.patientFields,
+          {
+            id,
+            source,
+            label: PATIENT_FIELD_LABELS[source],
+            showLabel: true,
+            column,
+            marginTopMm: 0,
+            marginLeftMm: 0,
+          },
+        ],
+      },
+      banner: "Page setup updated.",
+    }));
+  }
+
+  removePatientField(id: string) {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: s.pageSetup.patientFields.filter((f) => f.id !== id),
+      },
+      banner: "Page setup updated.",
+    }));
+  }
+
+  setPatientFieldLabel(id: string, label: string) {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: s.pageSetup.patientFields.map((f) => (f.id === id ? { ...f, label } : f)),
+      },
+    }));
+  }
+
+  setPatientFieldColumn(id: string, column: "left" | "right") {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: s.pageSetup.patientFields.map((f) => (f.id === id ? { ...f, column } : f)),
+      },
+      banner: "Page setup updated.",
+    }));
+  }
+
+  movePatientField(id: string, dir: "up" | "down") {
+    this.state.update((s) => {
+      const all = s.pageSetup.patientFields;
+      const field = all.find((f) => f.id === id);
+      if (!field) return s;
+      const sameCol = all.filter((f) => f.column === field.column);
+      const idx = sameCol.findIndex((f) => f.id === id);
+      const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sameCol.length) return s;
+      const otherId = sameCol[swapIdx].id;
+      const ia = all.findIndex((f) => f.id === id);
+      const ib = all.findIndex((f) => f.id === otherId);
+      const next = all.slice();
+      [next[ia], next[ib]] = [next[ib], next[ia]];
+      return { ...s, pageSetup: { ...s.pageSetup, patientFields: next } };
+    });
+  }
+
+  setPatientFieldLabelVisible(id: string, showLabel: boolean) {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: s.pageSetup.patientFields.map((f) => (f.id === id ? { ...f, showLabel } : f)),
+      },
+      banner: "Page setup updated.",
+    }));
+  }
+
+  setPatientFieldMargin(id: string, axis: "top" | "left", mm: number) {
+    const v = isNaN(mm) ? 0 : mm;
+    const key = axis === "top" ? "marginTopMm" : "marginLeftMm";
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        patientFields: s.pageSetup.patientFields.map((f) => (f.id === id ? { ...f, [key]: v } : f)),
+      },
+    }));
+  }
+
+  toggleResultColumn(key: ResultColumnKey) {
+    this.state.update((s) => {
+      const cols = s.pageSetup.resultColumns;
+      const visibleCount = cols.filter((c) => c.show).length;
+      const target = cols.find((c) => c.key === key);
+      if (target?.show && visibleCount <= 1) return s;
+      return {
+        ...s,
+        pageSetup: {
+          ...s.pageSetup,
+          resultColumns: cols.map((c) => (c.key === key ? { ...c, show: !c.show } : c)),
+        },
+        banner: "Page setup updated.",
+      };
+    });
+  }
+
+  setResultColumnLabel(key: ResultColumnKey, label: string) {
+    this.state.update((s) => ({
+      ...s,
+      pageSetup: {
+        ...s.pageSetup,
+        resultColumns: s.pageSetup.resultColumns.map((c) => (c.key === key ? { ...c, label } : c)),
+      },
+    }));
+  }
+
+  moveResultColumn(key: ResultColumnKey, dir: "left" | "right") {
+    this.state.update((s) => {
+      const cols = s.pageSetup.resultColumns.slice();
+      const idx = cols.findIndex((c) => c.key === key);
+      const swapIdx = dir === "left" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= cols.length) return s;
+      [cols[idx], cols[swapIdx]] = [cols[swapIdx], cols[idx]];
+      return { ...s, pageSetup: { ...s.pageSetup, resultColumns: cols } };
+    });
   }
 
   setReg(key: keyof RegForm, v: string) {

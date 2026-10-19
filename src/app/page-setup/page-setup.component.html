@@ -1,0 +1,417 @@
+<div class="screen">
+  <div class="main">
+    <div class="kicker">Setup</div>
+    <div class="page-title">Page setup</div>
+    <div class="intro">
+      Configure how printed reports are laid out — useful if your hospital or lab prints on its own
+      pre-printed letterhead stationery instead of this app's letterhead.
+    </div>
+
+    <div class="card setup-card">
+      <div class="section-title">Paper</div>
+      <div class="row-grid">
+        <label class="field-label">
+          Paper size
+          <select class="field-select" [value]="store.state().pageSetup.paperSize" (change)="setPaperSize($event)">
+            @for (s of paperSizes; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="section-title margin-title">Margins (mm)</div>
+      <div class="margins-grid">
+        @for (f of marginFields; track f.key) {
+          <label class="field-label">
+            {{ f.label }}
+            <input
+              class="field-input mono"
+              type="number"
+              min="0"
+              [value]="store.state().pageSetup[f.key]"
+              (input)="setMargin(f.key, $event)"
+            />
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="card setup-card">
+      <div class="toggle-row">
+        <div>
+          <div class="section-title no-margin">Use our own pre-printed letterhead</div>
+          <div class="toggle-hint">
+            Turn this on if your hospital already prints on letterhead paper with the header built in.
+            This app will skip its own letterhead and leave blank space at the top instead.
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div
+          class="switch"
+          [class.on]="store.state().pageSetup.useOwnLetterhead"
+          (click)="toggleUseOwnLetterhead()"
+        >
+          <div class="switch-knob"></div>
+        </div>
+      </div>
+
+      @if (store.state().pageSetup.useOwnLetterhead) {
+        <label class="field-label offset-field">
+          Space reserved at top for your letterhead (mm)
+          <input
+            class="field-input mono"
+            type="number"
+            min="0"
+            [value]="store.state().pageSetup.headerOffsetMm"
+            (input)="setHeaderOffset($event)"
+          />
+        </label>
+      } @else {
+        <div class="letterhead-fields">
+          <div class="section-title no-margin">Letterhead content</div>
+          <div class="row-grid">
+            @for (f of textFields; track f.key) {
+              <label class="field-label">
+                {{ f.label }}
+                <input
+                  class="field-input"
+                  [value]="store.state().pageSetup[f.key]"
+                  (input)="setTextField(f.key, $event)"
+                  [placeholder]="f.ph"
+                />
+              </label>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="card setup-card">
+      <div class="toggle-row">
+        <div>
+          <div class="section-title no-margin">Show patient info block</div>
+          <div class="toggle-hint">
+            Turn this off if the patient name, age, bill number etc. are already pre-printed on your
+            stationery and this app shouldn't print them again.
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div
+          class="switch"
+          [class.on]="store.state().pageSetup.showPatientMeta"
+          (click)="toggleShowPatientMeta()"
+        >
+          <div class="switch-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card setup-card">
+      <div class="section-title">Patient info fields</div>
+      <div class="toggle-hint field-editor-hint">
+        Choose which fields print, label them however you like, and arrange them into the left or
+        right column — e.g. to match a pre-printed form that splits Name / Age / Referred-by on one
+        side and Date / Bill no. on the other.
+      </div>
+
+      <div class="field-cols">
+        <div class="field-col">
+          <div class="field-col-title">Left column</div>
+          @for (f of leftFields(); track f.id; let i = $index) {
+            <div class="field-row">
+              <div class="field-row-top">
+                <input
+                  class="field-input field-row-label"
+                  [value]="f.label"
+                  (input)="setFieldLabel(f.id, $event)"
+                />
+                <span class="field-row-source">{{ sourceLabel(f.source) }}</span>
+                <div class="field-row-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    [class.icon-btn-active]="!f.showLabel"
+                    (click)="toggleFieldLabel(f)"
+                    title="{{ f.showLabel ? 'Showing label + value — click for value only' : 'Value only — click to show label too' }}"
+                  >
+                    Aa
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="moveField(f.id, 'up')"
+                    [disabled]="i === 0"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="moveField(f.id, 'down')"
+                    [disabled]="i === leftFields().length - 1"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="setFieldColumn(f.id, 'right')"
+                    title="Move to right column"
+                  >
+                    →
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn-danger"
+                    (click)="removeField(f.id)"
+                    title="Remove field"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div class="field-row-nudge">
+                <label class="offset-label">
+                  Nudge down
+                  <input
+                    class="field-input mono offset-input"
+                    type="number"
+                    [value]="f.marginTopMm"
+                    (input)="setFieldMargin(f.id, 'top', $event)"
+                  />
+                  mm
+                </label>
+                <label class="offset-label">
+                  Nudge right
+                  <input
+                    class="field-input mono offset-input"
+                    type="number"
+                    [value]="f.marginLeftMm"
+                    (input)="setFieldMargin(f.id, 'left', $event)"
+                  />
+                  mm
+                </label>
+              </div>
+            </div>
+          } @empty {
+            <div class="field-empty">No fields here.</div>
+          }
+        </div>
+
+        <div class="field-col">
+          <div class="field-col-title">Right column</div>
+          @for (f of rightFields(); track f.id; let i = $index) {
+            <div class="field-row">
+              <div class="field-row-top">
+                <input
+                  class="field-input field-row-label"
+                  [value]="f.label"
+                  (input)="setFieldLabel(f.id, $event)"
+                />
+                <span class="field-row-source">{{ sourceLabel(f.source) }}</span>
+                <div class="field-row-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    [class.icon-btn-active]="!f.showLabel"
+                    (click)="toggleFieldLabel(f)"
+                    title="{{ f.showLabel ? 'Showing label + value — click for value only' : 'Value only — click to show label too' }}"
+                  >
+                    Aa
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="setFieldColumn(f.id, 'left')"
+                    title="Move to left column"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="moveField(f.id, 'up')"
+                    [disabled]="i === 0"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    (click)="moveField(f.id, 'down')"
+                    [disabled]="i === rightFields().length - 1"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn-danger"
+                    (click)="removeField(f.id)"
+                    title="Remove field"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div class="field-row-nudge">
+                <label class="offset-label">
+                  Nudge down
+                  <input
+                    class="field-input mono offset-input"
+                    type="number"
+                    [value]="f.marginTopMm"
+                    (input)="setFieldMargin(f.id, 'top', $event)"
+                  />
+                  mm
+                </label>
+                <label class="offset-label">
+                  Nudge right
+                  <input
+                    class="field-input mono offset-input"
+                    type="number"
+                    [value]="f.marginLeftMm"
+                    (input)="setFieldMargin(f.id, 'left', $event)"
+                  />
+                  mm
+                </label>
+              </div>
+            </div>
+          } @empty {
+            <div class="field-empty">No fields here.</div>
+          }
+        </div>
+      </div>
+
+      <div class="add-field-row">
+        <select
+          class="field-select add-field-select"
+          [value]="addFieldSource()"
+          (change)="setAddFieldSource($event)"
+        >
+          @for (o of sourceOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+        <div class="btn btn-ghost btn-sm" (click)="addField('left')">+ Add to left</div>
+        <div class="btn btn-ghost btn-sm" (click)="addField('right')">+ Add to right</div>
+      </div>
+    </div>
+
+    <div class="card setup-card">
+      <div class="section-title">Result table columns</div>
+      <div class="toggle-hint field-editor-hint">
+        Choose which columns print and in what order. When "Unit" is hidden, its value is folded
+        into Result and Reference Range instead — e.g. "9.60 gm%" — matching how many pre-printed
+        forms lay it out.
+      </div>
+
+      <div class="columns-list">
+        @for (c of store.state().pageSetup.resultColumns; track c.key; let i = $index) {
+          <div class="column-row" [class.off]="!c.show">
+            <input type="checkbox" [checked]="c.show" (change)="toggleColumn(c.key)" />
+            <input
+              class="field-input column-label"
+              [value]="c.label"
+              (input)="setColumnLabel(c.key, $event)"
+            />
+            <div class="field-row-actions">
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="moveColumn(c.key, 'left')"
+                [disabled]="i === 0"
+                title="Move left"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="moveColumn(c.key, 'right')"
+                [disabled]="i === store.state().pageSetup.resultColumns.length - 1"
+                title="Move right"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <div class="btn btn-ghost" (click)="reset()">Reset to defaults</div>
+    </div>
+  </div>
+
+  <div class="preview-side">
+    <div class="kicker">Live preview</div>
+    <div class="preview-hint">This is what a printed report will look like with these settings.</div>
+
+    <div
+      class="preview-page"
+      [style.width.px]="preview().widthPx"
+      [style.height.px]="preview().heightPx"
+      [style.padding-top.%]="preview().pctTop"
+      [style.padding-right.%]="preview().pctRight"
+      [style.padding-bottom.%]="preview().pctBottom"
+      [style.padding-left.%]="preview().pctLeft"
+    >
+      <div class="preview-inner">
+        @if (store.state().pageSetup.useOwnLetterhead) {
+          <div class="preview-reserved" [style.height.%]="preview().pctHeaderOffset">
+            Reserved for your letterhead
+          </div>
+        } @else {
+          <div class="preview-letterhead">
+            <div class="preview-logo">{{ store.state().pageSetup.logoInitials || "SH" }}</div>
+            <div class="preview-hospital-name">{{ store.state().pageSetup.hospitalName || "Hospital name" }}</div>
+            <div class="preview-hospital-line">{{ store.state().pageSetup.addressLine }}</div>
+            <div class="preview-hospital-line">{{ store.state().pageSetup.departmentLine }}</div>
+          </div>
+        }
+
+        @if (store.state().pageSetup.showPatientMeta) {
+          <div class="preview-meta-cols">
+            <div class="preview-meta-col">
+              @for (f of leftFields(); track f.id) {
+                <div [style.margin-top.px]="f.marginTopMm * previewMmPx()" [style.margin-left.px]="f.marginLeftMm * previewMmPx()">
+                  {{ f.showLabel ? f.label + ": " : "" }}{{ sampleValues[f.source] }}
+                </div>
+              }
+            </div>
+            <div class="preview-meta-col">
+              @for (f of rightFields(); track f.id) {
+                <div [style.margin-top.px]="f.marginTopMm * previewMmPx()" [style.margin-left.px]="f.marginLeftMm * previewMmPx()">
+                  {{ f.showLabel ? f.label + ": " : "" }}{{ sampleValues[f.source] }}
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="preview-panel-heading">COMPLETE BLOOD COUNT</div>
+        <div class="preview-row preview-row-head" [style.grid-template-columns]="previewColTemplate()">
+          @for (c of visibleResultColumns(); track c.key) {
+            <div>{{ c.label }}</div>
+          }
+        </div>
+        <div class="preview-row" [style.grid-template-columns]="previewColTemplate()">
+          @for (c of visibleResultColumns(); track c.key) {
+            <div>{{ previewCellSample(c.key, "Hb", "13.2", "gm%", "12 - 16") }}</div>
+          }
+        </div>
+        <div class="preview-row" [style.grid-template-columns]="previewColTemplate()">
+          @for (c of visibleResultColumns(); track c.key) {
+            <div>{{ previewCellSample(c.key, "TLC", "7,400", "/cumm", "4,000 - 11,000") }}</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

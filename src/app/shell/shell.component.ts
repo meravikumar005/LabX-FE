@@ -24,6 +24,7 @@ export class ShellComponent {
       { path: "entry", label: "Result entry", count: `${c.entry}` },
       { path: "reports", label: "All reports", count: `${c.reports}` },
       { path: "templates", label: "Test templates", count: `${c.templates}` },
+      { path: "page-setup", label: "Page setup", count: "" },
     ];
   });
 

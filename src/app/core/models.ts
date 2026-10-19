@@ -86,6 +86,56 @@ export interface OrderEdit {
   q: string;
 }
 
+export type PaperSize = "A4" | "Letter" | "A5";
+
+export type PatientFieldSource =
+  | "name"
+  | "patientId"
+  | "ageSex"
+  | "mobile"
+  | "address"
+  | "ref"
+  | "bill"
+  | "date"
+  | "dateAd"
+  | "dateBs"
+  | "reportNo";
+
+export interface PatientFieldConfig {
+  id: string;
+  source: PatientFieldSource;
+  label: string;
+  showLabel: boolean;
+  column: "left" | "right";
+  marginTopMm: number;
+  marginLeftMm: number;
+}
+
+export type ResultColumnKey = "investigation" | "result" | "unit" | "referenceRange";
+
+export interface ResultColumnConfig {
+  key: ResultColumnKey;
+  label: string;
+  show: boolean;
+}
+
+export interface PageSetup {
+  paperSize: PaperSize;
+  marginTopMm: number;
+  marginRightMm: number;
+  marginBottomMm: number;
+  marginLeftMm: number;
+  useOwnLetterhead: boolean;
+  headerOffsetMm: number;
+  showPatientMeta: boolean;
+  hospitalName: string;
+  addressLine: string;
+  departmentLine: string;
+  logoInitials: string;
+  patientFields: PatientFieldConfig[];
+  resultColumns: ResultColumnConfig[];
+}
+
 export interface AppState {
   patients: Patient[];
   reports: Report[];
@@ -113,5 +163,6 @@ export interface AppState {
   selectedReports: string[];
   deleteTarget: string[] | null;
   printOrigin: "entry" | "dashboard" | "reports";
+  pageSetup: PageSetup;
   banner: string;
 }

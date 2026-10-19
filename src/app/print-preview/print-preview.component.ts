@@ -1,10 +1,11 @@
 import { Component, computed } from "@angular/core";
-import { Router } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { LabStore } from "../core/lab-store.service";
+import { ResultColumnKey } from "../core/models";
 
 @Component({
   selector: "app-print-preview",
-  imports: [],
+  imports: [RouterLink],
   templateUrl: "./print-preview.component.html",
   styleUrl: "./print-preview.component.css",
 })
@@ -39,6 +40,38 @@ export class PrintPreviewComponent {
         return "← Back to results";
     }
   });
+  readonly pageCss = computed(() => {
+    const size = this.store.state().pageSetup.paperSize;
+    const cssSize = size === "Letter" ? "letter" : size === "A5" ? "A5" : "A4";
+    return `@page { size: ${cssSize}; margin: 0; }`;
+  });
+
+  readonly leftFields = computed(() =>
+    this.store.state().pageSetup.patientFields.filter((f) => f.column === "left"),
+  );
+  readonly rightFields = computed(() =>
+    this.store.state().pageSetup.patientFields.filter((f) => f.column === "right"),
+  );
+
+  readonly visibleResultColumns = computed(() =>
+    this.store.state().pageSetup.resultColumns.filter((c) => c.show),
+  );
+  readonly showUnitColumn = computed(
+    () => this.store.state().pageSetup.resultColumns.find((c) => c.key === "unit")?.show ?? true,
+  );
+
+  private static readonly COLUMN_WIDTHS: Record<ResultColumnKey, string> = {
+    investigation: "1.6fr",
+    result: "0.9fr",
+    unit: "0.7fr",
+    referenceRange: "1.1fr",
+  };
+
+  readonly gridTemplate = computed(() =>
+    this.visibleResultColumns()
+      .map((c) => PrintPreviewComponent.COLUMN_WIDTHS[c.key])
+      .join(" "),
+  );
 
   flip(key: "printHeader" | "arrows" | "ranges") {
     if (key === "printHeader") this.store.toggleLetterhead();
