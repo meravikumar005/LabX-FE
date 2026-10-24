@@ -16,7 +16,13 @@
         <div>{{ t.label }}</div>
       </div>
     }
-    @if (store.state().cancelTarget === store.state().activeReport) {
+    @if (awaitingPrintConfirm()) {
+      <div class="print-confirm">
+        <div class="print-confirm-text">Did the report print successfully?</div>
+        <div class="btn btn-ghost btn-sm" (click)="dismissPrintConfirm()">No, stay here</div>
+        <div class="btn btn-primary btn-sm" (click)="confirmPrinted()">Yes, mark as printed</div>
+      </div>
+    } @else if (store.state().cancelTarget === store.state().activeReport) {
       <div class="cancel-confirm">
         <div class="cancel-confirm-text">Cancel this order? This can't be undone.</div>
         <div class="btn btn-ghost btn-sm" (click)="store.dismissCancelOrder()">Keep order</div>
@@ -50,83 +56,119 @@
       [style.padding-bottom.mm]="store.state().pageSetup.marginBottomMm"
       [style.padding-left.mm]="store.state().pageSetup.marginLeftMm"
     >
-      @if (store.state().printHeader) {
-        <div class="letterhead">
-          <div class="logo">{{ store.state().pageSetup.logoInitials || "SH" }}</div>
-          <div class="hospital-info">
-            <div class="hospital-name">{{ store.state().pageSetup.hospitalName }}</div>
-            <div class="hospital-line">{{ store.state().pageSetup.addressLine }}</div>
-            <div class="hospital-line">{{ store.state().pageSetup.departmentLine }}</div>
-          </div>
-          <div class="logo-spacer"></div>
-        </div>
-      } @else if (store.state().pageSetup.useOwnLetterhead && store.state().pageSetup.headerOffsetMm > 0) {
-        <div class="header-offset" [style.height.mm]="store.state().pageSetup.headerOffsetMm"></div>
-      }
-
-      @if (store.state().pageSetup.showPatientMeta) {
-        <div class="meta-cols">
-          <div class="meta-col">
-            @for (f of leftFields(); track f.id) {
-              <div [style.margin-top.mm]="f.marginTopMm" [style.margin-left.mm]="f.marginLeftMm">
-                @if (f.showLabel) {
-                  <b>{{ f.label }}:</b>
-                }
-                {{ store.patientFieldValue(f.source) }}
-              </div>
-            }
-          </div>
-          <div class="meta-col">
-            @for (f of rightFields(); track f.id) {
-              <div [style.margin-top.mm]="f.marginTopMm" [style.margin-left.mm]="f.marginLeftMm">
-                @if (f.showLabel) {
-                  <b>{{ f.label }}:</b>
-                }
-                {{ store.patientFieldValue(f.source) }}
-              </div>
-            }
-          </div>
-        </div>
-      }
-
-      @for (pl of store.printPanels(); track pl.id) {
-        <div>
-          <div class="panel-heading">{{ pl.heading }}</div>
-          <div class="panel-table" [style.grid-template-columns]="gridTemplate()">
-            @for (c of visibleResultColumns(); track c.key) {
-              <div class="ph">{{ c.label }}</div>
-            }
-            @for (r of pl.rows; track r.name) {
-              @for (c of visibleResultColumns(); track c.key) {
-                @switch (c.key) {
-                  @case ("investigation") {
-                    <div class="pr-name" [style.padding-left]="r.indent" [class.bold]="r.bold">{{ r.name }}</div>
-                  }
-                  @case ("result") {
-                    <div class="pr-value mono" [class.bold]="r.bold">
-                      {{ r.value }}{{ !showUnitColumn() && r.value && r.unit ? " " + r.unit : "" }}
-                      <span class="arrow" [class.flag-high]="r.high" [class.flag-low]="r.arrow && !r.high">{{ r.arrow }}</span>
-                    </div>
-                  }
-                  @case ("unit") {
-                    <div class="pr-unit">{{ r.unit }}</div>
-                  }
-                  @case ("referenceRange") {
-                    <div class="pr-ref mono">{{ r.ref }}{{ !showUnitColumn() && r.ref && r.unit ? " " + r.unit : "" }}</div>
-                  }
-                }
+      <table class="sheet-table">
+        <thead class="sheet-head-group">
+          <tr>
+            <td>
+              @if (store.state().printHeader) {
+                <div class="letterhead">
+                  <div class="logo">{{ store.state().pageSetup.logoInitials || "SH" }}</div>
+                  <div class="hospital-info">
+                    <div class="hospital-name">{{ store.state().pageSetup.hospitalName }}</div>
+                    <div class="hospital-line">{{ store.state().pageSetup.addressLine }}</div>
+                    <div class="hospital-line">{{ store.state().pageSetup.departmentLine }}</div>
+                  </div>
+                  <div class="logo-spacer"></div>
+                </div>
+              } @else if (store.state().pageSetup.useOwnLetterhead && store.state().pageSetup.headerOffsetMm > 0) {
+                <div class="header-offset" [style.height.mm]="store.state().pageSetup.headerOffsetMm"></div>
               }
-            }
-          </div>
-        </div>
-      }
 
-      <div class="sign-row">
-        <div class="printed-at">Printed {{ store.today.ad }} 10:12 · {{ store.state().activeReport }}</div>
-        <div class="signature">
-          <div class="signature-line">Lab Technologist</div>
-        </div>
-      </div>
+              @if (store.state().pageSetup.showPatientMeta) {
+                <div class="meta-cols">
+                  <div class="meta-col">
+                    @for (f of leftFields(); track f.id) {
+                      <div [style.margin-top.mm]="f.marginTopMm" [style.margin-left.mm]="f.marginLeftMm">
+                        @if (f.showLabel) {
+                          <b>{{ f.label }}:</b>
+                        }
+                        {{ store.patientFieldValue(f.source) }}
+                      </div>
+                    }
+                  </div>
+                  <div class="meta-col">
+                    @for (f of rightFields(); track f.id) {
+                      <div [style.margin-top.mm]="f.marginTopMm" [style.margin-left.mm]="f.marginLeftMm">
+                        @if (f.showLabel) {
+                          <b>{{ f.label }}:</b>
+                        }
+                        {{ store.patientFieldValue(f.source) }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </td>
+          </tr>
+        </thead>
+
+        <tbody class="sheet-body-group">
+          @for (pl of store.printPanels(); track pl.id) {
+            <!-- Each panel gets its own <tr> — browsers reliably break
+                 *between* table rows, but not inside a single cell's
+                 content, so this is what actually lets a panel move to the
+                 next page as a whole instead of either splitting mid-table
+                 or refusing to paginate at all. -->
+            <tr class="panel-row">
+              <td class="panel-cell">
+                <div class="panel-block">
+                  <div class="panel-heading">{{ pl.heading }}</div>
+                  <table class="panel-table">
+                    <colgroup>
+                      @for (c of visibleResultColumns(); track c.key) {
+                        <col [style.width.%]="columnWidthPct(c.key)" />
+                      }
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        @for (c of visibleResultColumns(); track c.key) {
+                          <th class="ph">{{ c.label }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (r of pl.rows; track r.name) {
+                        <tr>
+                          @for (c of visibleResultColumns(); track c.key) {
+                            @switch (c.key) {
+                              @case ("investigation") {
+                                <td class="pr-name" [style.padding-left]="r.indent" [class.bold]="r.bold">{{ r.name }}</td>
+                              }
+                              @case ("result") {
+                                <td class="pr-value mono" [class.bold]="r.bold">
+                                  {{ r.value }}{{ !showUnitColumn() && r.value && r.unit ? " " + r.unit : "" }}
+                                  <span class="arrow" [class.flag-high]="r.high" [class.flag-low]="r.arrow && !r.high">{{ r.arrow }}</span>
+                                </td>
+                              }
+                              @case ("unit") {
+                                <td class="pr-unit">{{ r.unit }}</td>
+                              }
+                              @case ("referenceRange") {
+                                <td class="pr-ref mono">{{ r.ref }}{{ !showUnitColumn() && r.ref && r.unit ? " " + r.unit : "" }}</td>
+                              }
+                            }
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          }
+
+          <tr class="sign-tr">
+            <td>
+              <div class="sign-row">
+                <div class="printed-at">Printed {{ store.today.ad }} 10:12 · {{ store.state().activeReport }}</div>
+                <div class="signature">
+                  <div class="signature-line">Lab Technologist</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

@@ -62,6 +62,21 @@
   color: var(--high-strong);
   max-width: 260px;
 }
+.print-confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 8px 10px 8px 14px;
+}
+.print-confirm-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent-fg);
+  max-width: 260px;
+}
 
 .print-canvas {
   flex: 1;
@@ -83,6 +98,28 @@
   font-size: 12.5px;
   color: var(--ink-strong);
   align-self: flex-start;
+}
+
+/* A real <table> — not a div styled to look like one — so the browser's
+   print engine reliably repeats <thead> on every page it breaks onto.
+   Div-based "display: table-header-group" fakery is much less consistently
+   honored across Chromium/WebKit's print/PDF pipeline. */
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.sheet-table > thead > tr > td,
+.sheet-table > tbody > tr > td {
+  padding: 0;
+}
+/* Repeats on every printed page — carries the letterhead and patient info
+   so a page that gets separated from page 1 is still self-identifying. */
+.sheet-head-group {
+  display: table-header-group;
+}
+.sheet-body-group {
+  display: table-row-group;
 }
 
 .header-offset {
@@ -143,24 +180,54 @@
   gap: 3px;
 }
 
+/* Keep a whole test panel (heading + its rows) together — if it doesn't
+   fit in what's left of the current page, push the entire panel to the
+   next page rather than splitting it mid-table. The repeating header
+   (.sheet-head-group) already re-prints the letterhead/patient info on
+   that next page automatically. Applied on the <tr> itself, not just the
+   div inside it — browsers reliably honor break control between table
+   rows, but not reliably *inside* a single cell's content, so the <tr>
+   is the control point that actually works. */
+.panel-row {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.panel-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
 .panel-heading {
   font-size: 13px;
   font-weight: 700;
   text-decoration: underline;
   padding: 14px 0 3px;
+  break-after: avoid;
+  break-inside: avoid;
 }
 .panel-table {
-  display: grid;
-  grid-template-columns: 1.6fr 0.8fr 0.8fr 1fr;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
 }
 .ph {
   font-weight: 700;
+  font-size: inherit;
+  text-align: left;
   padding: 5px 0;
   border-bottom: 1px solid var(--muted-4);
+}
+.panel-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 .pr-name {
   padding: 3px 0;
   font-weight: 400;
+  text-align: left;
+  vertical-align: baseline;
 }
 .pr-name.bold {
   font-weight: 700;
@@ -168,6 +235,8 @@
 .pr-value {
   padding: 3px 0;
   font-weight: 400;
+  text-align: left;
+  vertical-align: baseline;
 }
 .pr-value.bold {
   font-weight: 700;
@@ -177,16 +246,25 @@
 }
 .pr-unit {
   padding: 3px 0;
+  text-align: left;
+  vertical-align: baseline;
 }
 .pr-ref {
   padding: 3px 0;
+  text-align: left;
+  vertical-align: baseline;
 }
 
+.sign-tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
 .sign-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   padding-top: 56px;
+  break-inside: avoid;
 }
 .printed-at {
   font-size: 11px;

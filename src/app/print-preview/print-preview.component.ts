@@ -1,4 +1,4 @@
-import { Component, computed } from "@angular/core";
+import { Component, computed, signal } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 import { LabStore } from "../core/lab-store.service";
 import { ResultColumnKey } from "../core/models";
@@ -60,18 +60,21 @@ export class PrintPreviewComponent {
     () => this.store.state().pageSetup.resultColumns.find((c) => c.key === "unit")?.show ?? true,
   );
 
-  private static readonly COLUMN_WIDTHS: Record<ResultColumnKey, string> = {
-    investigation: "1.6fr",
-    result: "0.9fr",
-    unit: "0.7fr",
-    referenceRange: "1.1fr",
+  private static readonly COLUMN_WEIGHTS: Record<ResultColumnKey, number> = {
+    investigation: 1.6,
+    result: 0.9,
+    unit: 0.7,
+    referenceRange: 1.1,
   };
 
-  readonly gridTemplate = computed(() =>
-    this.visibleResultColumns()
-      .map((c) => PrintPreviewComponent.COLUMN_WIDTHS[c.key])
-      .join(" "),
-  );
+  columnWidthPct(key: ResultColumnKey): number {
+    const visible = this.visibleResultColumns();
+    const total = visible.reduce(
+      (sum, c) => sum + PrintPreviewComponent.COLUMN_WEIGHTS[c.key],
+      0,
+    );
+    return total > 0 ? (PrintPreviewComponent.COLUMN_WEIGHTS[key] / total) * 100 : 0;
+  }
 
   flip(key: "printHeader" | "arrows" | "ranges") {
     if (key === "printHeader") this.store.toggleLetterhead();
@@ -83,10 +86,29 @@ export class PrintPreviewComponent {
     this.store.verifyReport();
   }
 
+  readonly awaitingPrintConfirm = signal(false);
+
   print() {
-    this.store.printReport();
+    // Browsers never tell a page whether the user actually printed or hit
+    // Cancel in the OS dialog — `afterprint` fires either way. So we don't
+    // assume success: no status change, no navigation, until the user
+    // confirms it actually printed.
+    const onAfterPrint = () => {
+      window.removeEventListener("afterprint", onAfterPrint);
+      this.awaitingPrintConfirm.set(true);
+    };
+    window.addEventListener("afterprint", onAfterPrint);
     window.print();
+  }
+
+  confirmPrinted() {
+    this.awaitingPrintConfirm.set(false);
+    this.store.printReport();
     this.router.navigate(["/dashboard"]);
+  }
+
+  dismissPrintConfirm() {
+    this.awaitingPrintConfirm.set(false);
   }
 
   confirmCancel() {
